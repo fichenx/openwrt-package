@@ -79,6 +79,9 @@ git_svn master https://github.com/v2rayA/v2raya-openwrt v2raya
 #####luci-app-lucky及依赖#####
 git_svn main https://github.com/sirpdboy/luci-app-lucky lucky
 
+#####luci-app-vssr#####
+git clone -b master https://github.com/MilesPoupart/luci-app-vssr luci-app-vssr
+
 ############暂时替换原kenzok8/small-package/.github/diy/main.sh中无法使用的svn命令############
 git_sparse_clone master "https://github.com/immortalwrt/luci" "temp" applications/luci-app-homeproxy
 git_sparse_clone master "https://github.com/coolsnowwolf/luci" "temp" libs/luci-lib-ipkg
