@@ -53,16 +53,46 @@ int main(const int argc, char *argv[]) {
     }
 
     while (!should_exit) {
-        if (nfqueue_receive(queue, buf, 0) == IO_READY) {
-            struct nf_packet packet[1];
-            while (nfqueue_next(buf, packet) == IO_READY) {
-                handle_packet(queue, packet);
+        const __auto_type buf_status = nfqueue_receive(queue, buf, 0);
+        switch (buf_status) {
+        case IO_ERROR:
+            should_exit = true;
+            break;
+        case IO_NOTREADY:
+            continue;
+        case IO_READY:
+            while (!should_exit) {
+                struct nf_packet packet[1];
+                switch (nfqueue_next(buf, packet)) {
+                case IO_ERROR:
+                    should_exit = true;
+                    break;
+                case IO_READY:
+                    handle_packet(queue, packet);
+                    break;
+                case IO_NOTREADY:
+                    // we've read every packet in the buffer
+                    break;
+                default:
+                    // we should never reach this point
+                    syslog(LOG_ERR, "Unknown return value [%s:%d]", __FILE__, __LINE__);
+                    should_exit = true;
+                    break;
+                }
             }
+            break;
+        default:
+            // we should never reach this point
+            syslog(LOG_ERR, "Unknown return value [%s:%d]", __FILE__, __LINE__);
+            should_exit = true;
+            break;
         }
     }
 
     free(buf->data);
     nfqueue_close(queue);
+
+    return EXIT_SUCCESS;
 }
 
 #pragma clang diagnostic pop
