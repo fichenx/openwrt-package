@@ -161,7 +161,7 @@ svn export https://github.com/kenzok8/jell/trunk/luci-app-bridge
 
 git_sparse_clone master "https://github.com/coolsnowwolf/packages" "leanpack" net/miniupnpd net/mwan3 \
 net/amule net/baidupcs-web multimedia/gmediarender net/go-aliyundrive-webdav \
-net/uugamebooster net/verysync net/dnsforwarder net/nps net/tcpping
+net/verysync net/dnsforwarder net/nps net/tcpping
 mv -f miniupnpd miniupnpd-iptables
 
 git_sparse_clone openwrt-23.05 "https://github.com/openwrt/packages" "22packages" \
@@ -172,7 +172,7 @@ package/base-files package/network/config/firewall4 package/network/config/firew
 package/network/services/dnsmasq package/libs/openssl
 
 git_sparse_clone master "https://github.com/immortalwrt/packages" "immpack" net/sub-web net/dnsproxy net/haproxy net/cdnspeedtest \
-net/subconverter net/ngrokc net/oscam net/njitclient net/scutclient net/gowebdav net/udp2raw \
+net/uugamebooster net/subconverter net/ngrokc net/oscam net/njitclient net/scutclient net/gowebdav net/udp2raw \
 admin/btop libs/wxbase libs/rapidjson libs/libcron libs/quickjspp libs/toml11 libs/libtorrent-rasterbar \
 libs/libdouble-conversion libs/qt6base libs/cxxopts libs/jpcre2 libs/alac \
 utils/cpulimit devel/gn
@@ -220,6 +220,7 @@ sed -i 's/	ip.neighbors/	luci.ip.neighbors/' luci-app-wifidog/luasrc/model/cbi/w
 sed -i '/entry({"admin", "nas"}, firstchild(), "NAS", 45).dependent = false/d; s/entry({"admin", "network", "eqos"}, cbi("eqos"), _("EQoS"))/entry({"admin", "network", "eqos"}, cbi("eqos"), _("EQoS"), 121).dependent = true/' luci-app-eqos/luasrc/controller/eqos.lua
 #sed -i '65,73d' adguardhome/Makefile
 sed -i 's/PKG_SOURCE_DATE:=2/PKG_SOURCE_DATE:=3/' transmission-web-control/Makefile
+find . -type f -name "update.sh" -exec rm -f {} \;
 rm -rf adguardhome/patches
 exit 0
 
