@@ -1,83 +1,83 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-03-12 13:29+0000\n"
-"Last-Translator: Jiri Grönroos <jiri.gronroos@iki.fi>\n"
-"Language-Team: Finnish <https://hosted.weblate.org/projects/openwrt/"
-"luciapplicationswireguard/fi/>\n"
-"Language: fi\n"
+"PO-Revision-Date: 2022-02-02 16:56+0000\n"
+"Last-Translator: ButterflyOfFire <ButterflyOfFire@protonmail.com>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/openwrt/"
+"luciapplicationswireguard/fr/>\n"
+"Language: fr\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.12-dev\n"
+"Plural-Forms: nplurals=2; plural=n > 1;\n"
+"X-Generator: Weblate 4.11-dev\n"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:25
 msgid "%dh ago"
-msgstr "%d h sitten"
+msgstr "%dh passée"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:23
 msgid "%dm ago"
-msgstr "%d min sitten"
+msgstr "%dm passée"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:21
 msgid "%ds ago"
-msgstr "%d s sitten"
+msgstr "%ds passée"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:117
 msgid "Allowed IPs"
-msgstr "Sallitut IP:t"
+msgstr "IP autorisées"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:123
 msgid "Data Received"
-msgstr "Dataa vastaanotettu"
+msgstr "Donnée reçue"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:125
 msgid "Data Transmitted"
-msgstr "Dataa lähetetty"
+msgstr "Données transmises"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:115
 msgid "Endpoint"
-msgstr "Päätepiste"
+msgstr "Point d'arrivée"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:106
 msgid "Firewall Mark"
-msgstr "Palomuurimerkintä"
+msgstr "Marque du Pare-feu"
 
 #: applications/luci-app-wireguard/root/usr/share/rpcd/acl.d/luci-app-wireguard.json:3
 msgid "Grant access to LuCI app wireguard"
-msgstr ""
+msgstr "Autoriser l'accès à l'application LuCI wireguard"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:121
 msgid "Latest Handshake"
-msgstr "Viimeisin kättely"
+msgstr "Dernière poignée de main"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:104
 msgid "Listen Port"
-msgstr "Kuunteluportti"
+msgstr "Port d'écoute"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:15
 msgid "Never"
-msgstr "Ei ikinä"
+msgstr "Jamais"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:214
 msgid "No WireGuard interfaces configured."
-msgstr "WireGuard-sovittimia ei ole määritetty."
+msgstr "Aucune interface WireGuard configurée."
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:94
 msgid "No peer information available"
-msgstr "Vertaistietoja ei ole saatavilla"
+msgstr "Aucune information sur les pairs n’est disponible"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:205
 msgid "Peers"
-msgstr "Vertaiset"
+msgstr "Pairs"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:119
 msgid "Persistent Keepalive"
-msgstr "Pysyvä Keepalive"
+msgstr "KeepAlive persistant"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:102
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:113
 msgid "Public Key"
-msgstr "Julkinen avain"
+msgstr "Clé publique"
 
 #: applications/luci-app-wireguard/root/usr/share/luci/menu.d/luci-app-wireguard.json:3
 msgid "WireGuard"
@@ -85,8 +85,8 @@ msgstr "WireGuard"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:179
 msgid "WireGuard Status"
-msgstr "WireGuardin tila"
+msgstr "État de WireGuard"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:27
 msgid "over a day ago"
-msgstr "yli päivä sitten"
+msgstr "il y a plus d'un jour"

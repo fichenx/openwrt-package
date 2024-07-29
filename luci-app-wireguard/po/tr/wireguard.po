@@ -1,83 +1,83 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-03-12 13:29+0000\n"
-"Last-Translator: Jiri Grönroos <jiri.gronroos@iki.fi>\n"
-"Language-Team: Finnish <https://hosted.weblate.org/projects/openwrt/"
-"luciapplicationswireguard/fi/>\n"
-"Language: fi\n"
+"PO-Revision-Date: 2021-11-29 16:08+0000\n"
+"Last-Translator: ToldYouThat <itoldyouthat@protonmail.com>\n"
+"Language-Team: Turkish <https://hosted.weblate.org/projects/openwrt/"
+"luciapplicationswireguard/tr/>\n"
+"Language: tr\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.12-dev\n"
+"X-Generator: Weblate 4.10-dev\n"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:25
 msgid "%dh ago"
-msgstr "%d h sitten"
+msgstr "%d sa önce"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:23
 msgid "%dm ago"
-msgstr "%d min sitten"
+msgstr "%d dak önce"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:21
 msgid "%ds ago"
-msgstr "%d s sitten"
+msgstr "%d sn önce"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:117
 msgid "Allowed IPs"
-msgstr "Sallitut IP:t"
+msgstr "İzin verilen IP adresleri"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:123
 msgid "Data Received"
-msgstr "Dataa vastaanotettu"
+msgstr "Alınan Veriler"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:125
 msgid "Data Transmitted"
-msgstr "Dataa lähetetty"
+msgstr "İletilen Veriler"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:115
 msgid "Endpoint"
-msgstr "Päätepiste"
+msgstr "Bitiş Noktası"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:106
 msgid "Firewall Mark"
-msgstr "Palomuurimerkintä"
+msgstr "Güvenlik Duvarı İşareti"
 
 #: applications/luci-app-wireguard/root/usr/share/rpcd/acl.d/luci-app-wireguard.json:3
 msgid "Grant access to LuCI app wireguard"
-msgstr ""
+msgstr "LuCI uygulaması wireguard'a erişim izni verin"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:121
 msgid "Latest Handshake"
-msgstr "Viimeisin kättely"
+msgstr "Son El Sıkışma"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:104
 msgid "Listen Port"
-msgstr "Kuunteluportti"
+msgstr "Dinleme Bağlantı Noktası"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:15
 msgid "Never"
-msgstr "Ei ikinä"
+msgstr "Asla"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:214
 msgid "No WireGuard interfaces configured."
-msgstr "WireGuard-sovittimia ei ole määritetty."
+msgstr "Yapılandırılmış bir WireGuard arabirimi yok."
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:94
 msgid "No peer information available"
-msgstr "Vertaistietoja ei ole saatavilla"
+msgstr "Kullanılabilir eş bilgisi yok"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:205
 msgid "Peers"
-msgstr "Vertaiset"
+msgstr "Eşler"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:119
 msgid "Persistent Keepalive"
-msgstr "Pysyvä Keepalive"
+msgstr "Sürekli Canlı Tut"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:102
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:113
 msgid "Public Key"
-msgstr "Julkinen avain"
+msgstr "Ortak Anahtar"
 
 #: applications/luci-app-wireguard/root/usr/share/luci/menu.d/luci-app-wireguard.json:3
 msgid "WireGuard"
@@ -85,8 +85,8 @@ msgstr "WireGuard"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:179
 msgid "WireGuard Status"
-msgstr "WireGuardin tila"
+msgstr "WireGuard Durumu"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:27
 msgid "over a day ago"
-msgstr "yli päivä sitten"
+msgstr "bir günden daha önce"

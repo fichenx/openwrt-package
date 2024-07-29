@@ -1,46 +1,46 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-03-12 13:29+0000\n"
-"Last-Translator: Jiri Grönroos <jiri.gronroos@iki.fi>\n"
-"Language-Team: Finnish <https://hosted.weblate.org/projects/openwrt/"
-"luciapplicationswireguard/fi/>\n"
-"Language: fi\n"
+"PO-Revision-Date: 2020-03-31 13:27+0000\n"
+"Last-Translator: Tamas Szanto <taszanto@gmail.com>\n"
+"Language-Team: Hungarian <https://hosted.weblate.org/projects/openwrt/"
+"luciapplicationswireguard/hu/>\n"
+"Language: hu\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.12-dev\n"
+"X-Generator: Weblate 4.0-dev\n"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:25
 msgid "%dh ago"
-msgstr "%d h sitten"
+msgstr "%d órával ezelőtt"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:23
 msgid "%dm ago"
-msgstr "%d min sitten"
+msgstr "%d perccel ezelőtt"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:21
 msgid "%ds ago"
-msgstr "%d s sitten"
+msgstr "%d másodperccel ezelőtt"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:117
 msgid "Allowed IPs"
-msgstr "Sallitut IP:t"
+msgstr "Engedélyezett IP-k"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:123
 msgid "Data Received"
-msgstr "Dataa vastaanotettu"
+msgstr "Fogadott adat"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:125
 msgid "Data Transmitted"
-msgstr "Dataa lähetetty"
+msgstr "Átvitt adat"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:115
 msgid "Endpoint"
-msgstr "Päätepiste"
+msgstr "Végpont"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:106
 msgid "Firewall Mark"
-msgstr "Palomuurimerkintä"
+msgstr "Tűzfal jelölés"
 
 #: applications/luci-app-wireguard/root/usr/share/rpcd/acl.d/luci-app-wireguard.json:3
 msgid "Grant access to LuCI app wireguard"
@@ -48,45 +48,45 @@ msgstr ""
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:121
 msgid "Latest Handshake"
-msgstr "Viimeisin kättely"
+msgstr "Utolsó kapcsolatfelvétel"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:104
 msgid "Listen Port"
-msgstr "Kuunteluportti"
+msgstr "Fogadó port"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:15
 msgid "Never"
-msgstr "Ei ikinä"
+msgstr "Soha"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:214
 msgid "No WireGuard interfaces configured."
-msgstr "WireGuard-sovittimia ei ole määritetty."
+msgstr ""
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:94
 msgid "No peer information available"
-msgstr "Vertaistietoja ei ole saatavilla"
+msgstr ""
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:205
 msgid "Peers"
-msgstr "Vertaiset"
+msgstr ""
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:119
 msgid "Persistent Keepalive"
-msgstr "Pysyvä Keepalive"
+msgstr "Megmaradó keepalive"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:102
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:113
 msgid "Public Key"
-msgstr "Julkinen avain"
+msgstr "Nyilvános kulcs"
 
 #: applications/luci-app-wireguard/root/usr/share/luci/menu.d/luci-app-wireguard.json:3
 msgid "WireGuard"
-msgstr "WireGuard"
+msgstr ""
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:179
 msgid "WireGuard Status"
-msgstr "WireGuardin tila"
+msgstr "WireGuard állapot"
 
 #: applications/luci-app-wireguard/htdocs/luci-static/resources/view/wireguard/status.js:27
 msgid "over a day ago"
-msgstr "yli päivä sitten"
+msgstr "több mint egy nappal ezelőtt"
