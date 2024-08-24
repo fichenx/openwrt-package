@@ -69,6 +69,9 @@ rm -rf msd_lite
 git_sparse_clone master "https://github.com/immortalwrt/packages" "immortalwrt" net/msd_lite
 git clone --depth 1 https://github.com/sirpdboy/luci-app-ddns-go ddnsgo && mv -n ddnsgo/ddns-go ./; rm -rf ddnsgo
 
+#####luci-theme-design#####
+git_svn main https://github.com/fichenx/packages luci-theme-design
+git_svn main https://github.com/fichenx/packages luci-app-design-config
 
 #####bypass依赖#####
 git_svn master https://github.com/fw876/helloworld shadowsocksr-libev redsocks2 lua-neturl dns2tcp
