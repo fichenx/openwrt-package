@@ -73,6 +73,9 @@ git clone --depth 1 https://github.com/sirpdboy/luci-app-ddns-go ddnsgo && mv -n
 git_svn main https://github.com/fichenx/packages luci-theme-design
 git_svn main https://github.com/fichenx/packages luci-app-design-config
 
+#####luci-app-watchcat-plus#####
+git_svn main https://github.com/fichenx/packages luci-app-watchcat-plus
+
 #####bypass依赖#####
 git_svn master https://github.com/fw876/helloworld shadowsocksr-libev redsocks2 lua-neturl dns2tcp
 
