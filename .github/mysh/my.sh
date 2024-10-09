@@ -77,6 +77,7 @@ git_svn main https://github.com/fichenx/packages luci-app-design-config
 git_svn main https://github.com/fichenx/packages luci-app-watchcat-plus
 
 #####bypass依赖#####
+git_svn main https://github.com/fichenx/packages luci-app-bypass
 git_svn master https://github.com/fw876/helloworld shadowsocksr-libev redsocks2 lua-neturl dns2tcp
 
 #####luci-app-v2raya依赖#####
