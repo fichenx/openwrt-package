@@ -5,8 +5,8 @@ function index()
 		return
 	end
 
-	entry({"admin", "vpn", "npc"}, cbi("npc"), _("NPS Client"), 99).dependent = true
-	entry({"admin", "vpn", "npc", "status"}, call("act_status")).leaf = true
+	entry({"admin", "services", "npc"}, cbi("npc"), _("NPS Client"), 99).dependent = true
+	entry({"admin", "services", "npc", "status"}, call("act_status")).leaf = true
 end
 
 function act_status()
