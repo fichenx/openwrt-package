@@ -65,9 +65,13 @@ general/smartdns general/xray-core general/xray-plugin
 #git clone --depth 1 https://github.com/immortalwrt/homeproxy
 #git_sparse_clone master "https://github.com/coolsnowwolf/luci" "coolsnowwolf" applications/luci-app-accesscontrol
 git clone --depth 1 https://github.com/gngpp/luci-app-watchcat-plus
-rm -rf msd_lite
-git_sparse_clone master "https://github.com/immortalwrt/packages" "immortalwrt" net/msd_lite
+#rm -rf msd_lite
+#git_sparse_clone master "https://github.com/immortalwrt/packages" "immortalwrt" net/msd_lite
 git clone --depth 1 https://github.com/sirpdboy/luci-app-ddns-go ddnsgo && mv -n ddnsgo/ddns-go ./; rm -rf ddnsgo
+
+#####luci-app-msd_lite#####
+rm -rf luci-app-msd_lite
+git clone --depth 1 https://github.com/hejiadong0608/luci-app-msd_lite
 
 #####luci-theme-design#####
 git_svn main https://github.com/fichenx/packages luci-theme-design
