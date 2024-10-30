@@ -7,11 +7,11 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=20221214
-PKG_RELEASE:=1
+PKG_VERSION:=1
+PKG_RELEASE:=11
 
-LUCI_TITLE:=LuCI support for Multi Stream Daemon Lite
-LUCI_DEPENDS:=+msd_lite +luci-compat
+LUCI_TITLE:=LuCI support for MSD Lite
+LUCI_DEPENDS:=+libc +msd_lite
 LUCI_PKGARCH:=all
 
 include $(TOPDIR)/feeds/luci/luci.mk

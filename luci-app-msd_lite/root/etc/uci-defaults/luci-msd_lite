@@ -1,6 +1,5 @@
 #!/bin/sh
 
-# needed for "Save and Apply" to restart msd_lite
 uci -q batch <<-EOF >/dev/null
 	delete ucitrack.@msd_lite[-1]
 	add ucitrack msd_lite
@@ -9,4 +8,9 @@ uci -q batch <<-EOF >/dev/null
 EOF
 
 rm -f /tmp/luci-indexcache
+
+sed -i '/msd_lite/d' /etc/crontabs/root
+echo '0 2 * * * echo "" > /tmp/log/msd_lite.log' >> /etc/crontabs/root
+crontab /etc/crontabs/root
+
 exit 0
