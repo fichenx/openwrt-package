@@ -1,3 +1,4 @@
+
 module("luci.controller.msd_lite", package.seeall)
 
 function index()
@@ -5,17 +6,20 @@ function index()
 		return
 	end
 
-	entry({"admin", "services", "msd_lite"}, alias("admin", "services", "msd_lite", "general"), _("Multi Stream Daemon"), 80)
-	entry({"admin", "services", "msd_lite", "general"}, cbi("msd_lite/settings"), _("Base Setting"), 1)
-	entry({"admin", "services", "msd_lite", "log"}, form("msd_lite/info"), _("Log"), 2)
-
-	entry({"admin", "services", "msd_lite", "status"}, call("status")).leaf = true
+	local page
+	page = entry({"admin", "services", "msd_lite"}, cbi("msd_lite"), _("MultiSD_Lite"), 60)
+	page.dependent = true
+	page = entry({"admin", "services", "msd_lite", "status"}, call("act_status"))
+	page.leaf = true
 end
 
-function status()
+local function is_running()
+	return luci.sys.call("pidof msd_lite >/dev/null") == 0
+end
+
+function act_status()
 	local e = {}
-	e.running = luci.sys.call("pgrep msd_lite >/dev/null") == 0
+	e.running = is_running()
 	luci.http.prepare_content("application/json")
 	luci.http.write_json(e)
 end
-
