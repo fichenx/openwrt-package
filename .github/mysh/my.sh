@@ -86,7 +86,7 @@ git_svn master https://github.com/v2rayA/v2raya-openwrt v2raya
 
 #####luci-app-lucky及依赖#####
 rm -rf luci-app-lucky lucky
-git_svn main https://github.com/gdy666/luci-app-lucky lucky
+git_svn main https://github.com/gdy666/luci-app-lucky luci-app-lucky lucky
 
 #####luci-app-vssr#####
 git clone -b master https://github.com/MilesPoupart/luci-app-vssr luci-app-vssr
