@@ -109,6 +109,9 @@ git clone --depth=1 https://github.com/mchome/openwrt-dogcom.git
 #####urllogger#####
 git_svn master https://github.com/x-wrt/com.x-wrt urllogger
 
+#####tuic-client、shadow-tls#####
+git_svn master https://github.com/fw876/helloworld tuic-client shadow-tls
+
 ############暂时替换原kenzok8/small-package/.github/diy/main.sh中无法使用的svn命令############
 git_sparse_clone master "https://github.com/immortalwrt/luci" "temp" applications/luci-app-homeproxy
 git_sparse_clone master "https://github.com/coolsnowwolf/luci" "temp" libs/luci-lib-ipkg
