@@ -106,6 +106,9 @@ git_svn ipk https://github.com/ilxp/luci-app-ikoolproxy luci-app-ikoolproxy kool
 #####openwrt-dogcom#####
 git_svn master https://github.com/mchome/openwrt-dogcom openwrt-dogcom && mv -f openwrt-dogcom dogcom
 
+#####urllogger#####
+git_svn master https://github.com/x-wrt/com.x-wrt urllogger
+
 ############暂时替换原kenzok8/small-package/.github/diy/main.sh中无法使用的svn命令############
 git_sparse_clone master "https://github.com/immortalwrt/luci" "temp" applications/luci-app-homeproxy
 git_sparse_clone master "https://github.com/coolsnowwolf/luci" "temp" libs/luci-lib-ipkg
