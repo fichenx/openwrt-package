@@ -13,6 +13,6 @@ LUCI_DEPENDS:=+luci-base +luci-compat +nft-qos
 
 PKG_MAINTAINER:=Rosy Song <rosysong@rosinson.com>
 
-include ../../luci.mk
+include $(TOPDIR)/feeds/luci/luci.mk
 
 # call BuildPackage - OpenWrt buildroot signature
