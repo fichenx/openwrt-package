@@ -150,6 +150,12 @@ sed -i 's/\[control\]/\[system\]/g'  luci-app-autotimeset/luasrc/view/autotimese
 rm -rf upx
 rm -rf upx-static
 
+#修复部分插件Makefile文件include使用相对目录问题
+sed -i 's|../../lang/golang/golang-package.mk|$(TOPDIR)/feeds/packages/lang/golang/golang-package.mk|g' dockerd/Makefile
+sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-app-nft-qos/Makefile
+sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-app-wireguard/Makefile
+sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-lib-ipkg/Makefile
+
 ######################################
 
 exit 0
