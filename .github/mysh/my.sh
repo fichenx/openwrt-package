@@ -115,6 +115,9 @@ git_svn master https://github.com/fw876/helloworld tuic-client shadow-tls
 #####n3n#####
 git_svn main https://github.com/fichenx/packages n3n
 
+#####luci-app-vnt#####
+git_svn main https://github.com/lmq8267/luci-app-vnt luci-app-vnt
+
 ############暂时替换原kenzok8/small-package/.github/diy/main.sh中无法使用的svn命令############
 git_sparse_clone master "https://github.com/immortalwrt/luci" "temp" applications/luci-app-homeproxy
 git_sparse_clone master "https://github.com/coolsnowwolf/luci" "temp" libs/luci-lib-ipkg
