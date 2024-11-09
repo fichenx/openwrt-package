@@ -16,7 +16,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 # (eg, the github action calculates the correct overrides for each build)
 
 PKG_SOURCE_URL?=https://codeload.github.com/n42n/n3n/tar.gz/$(PKG_VERSION)?
-#PKG_SOURCE_VERSION?=$(BUILD_SOURCE_REF)
+PKG_SOURCE_VERSION?=ef8ff920ae530c58a6431b684a33ea37525971d0
 PKG_MIRROR_HASH:=3fdbb5104bf4260d7eb634afe2b6c6469e14bb72a37946fcf7bd0b6f390fa238
 
 PKG_MAINTAINER:=Hamish Coleman <hamish@zot.org>
