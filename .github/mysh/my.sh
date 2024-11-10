@@ -100,8 +100,8 @@ rm -rf luci-app-mosdns mosdns v2dat
 git_svn v5-lua https://github.com/sbwml/luci-app-mosdns luci-app-mosdns mosdns v2dat 
 
 #####luci-app-ikoolproxy#####
-rm -rf luci-app-ikoolproxy
-git_svn ipk https://github.com/ilxp/luci-app-ikoolproxy luci-app-ikoolproxy koolproxy
+rm -rf luci-app-ikoolproxy luci-app-godproxy
+git clone -b main https://github.com/ilxp/luci-app-ikoolproxy luci-app-ikoolproxy
 
 #####openwrt-dogcom#####
 git clone --depth=1 https://github.com/mchome/openwrt-dogcom.git
