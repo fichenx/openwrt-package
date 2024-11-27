@@ -100,7 +100,7 @@ git clone --depth 1 https://github.com/kenzok78/luci-theme-argone
 git clone --depth 1 https://github.com/kenzok78/luci-app-argone-config
 git clone --depth 1 https://github.com/kenzok78/luci-app-adguardhome
 git clone --depth 1 https://github.com/kenzok78/luci-theme-design
-git clone --depth 1 https://github.com/gngpp/luci-app-design-config
+git clone --depth 1 https://github.com/kenzok78/luci-app-design-config
 git clone --depth 1 -b lede https://github.com/pymumu/luci-app-smartdns
 git clone --depth 1 https://github.com/ophub/luci-app-amlogic amlogic && mv -n amlogic/luci-app-amlogic ./;rm -rf amlogic
 git clone --depth 1 https://github.com/linkease/nas-packages && mv -n nas-packages/{network/services/*,multimedia/*} ./; rm -rf nas-packages
@@ -171,8 +171,8 @@ svn export https://github.com/kenzok8/jell/trunk/vsftpd-alt
 svn export https://github.com/kenzok8/jell/trunk/luci-app-bridge
 
 git_sparse_clone master "https://github.com/coolsnowwolf/packages" "leanpack" net/miniupnpd net/mwan3 \
-multimedia/gmediarender multimedia/UnblockNeteaseMusic-Go \
-net/go-aliyundrive-webdav net/verysync net/dnsforwarder net/msd_lite \
+multimedia/gmediarender multimedia/UnblockNeteaseMusic-Go net/phtunnel net/frp net/headscale net/go-aliyundrive-webdav \
+net/verysync net/vlmcsd net/dnsforwarder net/tcpping net/netatalk net/pgyvpn net/msd_lite \
 net/nps net/tcpping net/amule net/baidupcs-web 
 mv -f miniupnpd miniupnpd-iptables
 
