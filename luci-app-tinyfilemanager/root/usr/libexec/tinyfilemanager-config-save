@@ -1,7 +1,13 @@
 #!/bin/sh
 
 CONFIG_NAME='tinyfilemanager'
-eval "$(sed -En '/^\$CONFIG\s*=\s*/{s|^\$CONFIG\s*=\s*|CONFIG=|p}' $CONF)"
 
-uci set $CONFIG_NAME.@$TYPEDSECTION[0].defconf="$CONFIG"
-[ -z "$(uci changes $CONFIG_NAME)" ] || uci commit $CONFIG_NAME
+while :; do
+	inotifywait -e modify $CONF 2>/dev/null
+
+	CONFIG="$(sed -En "/^\\\$CONFIG\s*=.*/{s|^.+'(.+)'.*|\1|p}" $CONF)"
+	if [ -n "$CONFIG" ]; then
+		uci set $CONFIG_NAME.@$TYPEDSECTION[0].defconf="$CONFIG"
+		[ -z "$(uci changes $CONFIG_NAME)" ] || uci commit $CONFIG_NAME
+	fi
+done
