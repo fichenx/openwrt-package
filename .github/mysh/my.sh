@@ -70,9 +70,9 @@ rm -rf msd_lite
 git_sparse_clone master "https://github.com/immortalwrt/packages" "immortalwrt" net/msd_lite
 #更换msd_lite源为修改版（可以反向代理）
 sed -i 's|PKG_SOURCE_URL:=.*|PKG_SOURCE_URL:=https://github.com/fichenx/msd_lite.git|g'  msd_lite/Makefile
-sed -i 's|PKG_SOURCE_DATE:=.*|PKG_SOURCE_DATE:=2024-12-15|g'  msd_lite/Makefile
-sed -i 's|PKG_SOURCE_VERSION:=.*|PKG_SOURCE_VERSION:=a0af788a13908c99649448bfd07a8965afd05856|g'  msd_lite/Makefile
-sed -i 's|PKG_MIRROR_HASH:=.*|PKG_MIRROR_HASH:=5b4f953f4233546542cc1133a892f6bc54e95958e609df3cb9b557d787c833b0|g'  msd_lite/Makefile
+sed -i 's|PKG_SOURCE_DATE:=.*|PKG_SOURCE_DATE:=2024-12-16|g'  msd_lite/Makefile
+sed -i 's|PKG_SOURCE_VERSION:=.*|PKG_SOURCE_VERSION:=983f5c07527b0c87a6494db49eade57da3c516bf|g'  msd_lite/Makefile
+sed -i 's|PKG_MIRROR_HASH:=.*|PKG_MIRROR_HASH:=11039120524d97a23ebf57f4ac494464cff6dd07a843c0b968ef818920361965|g'  msd_lite/Makefile
 
 git clone --depth 1 https://github.com/sirpdboy/luci-app-ddns-go ddnsgo && mv -n ddnsgo/ddns-go ./; rm -rf ddnsgo
 
