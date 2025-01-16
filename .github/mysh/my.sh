@@ -2,41 +2,50 @@
 function git_clone() {
   git clone --depth 1 $1 $2 || true
  }
+
+
 function git_sparse_clone() {
-  branch="$1" rurl="$2" localdir="$3" && shift 3
-  #git clone -b $branch --depth 1 --filter=blob:none --sparse $rurl $localdir
-  git clone -b $branch --single-branch --no-tags --depth 1 --filter=blob:none --no-checkout $rurl $localdir
-  cd $localdir
-  #git sparse-checkout init --cone
-  #git sparse-checkout set $@
-  git checkout $branch -- $@
+  branch="$1" rurl="$2" && shift 2
+  rootdir="$PWD"
+  git clone -b $branch --depth 1 --filter=blob:none --sparse $rurl temp_sparse
+  #git clone -b $branch --single-branch --no-tags --depth 1 --filter=blob:none --no-checkout $rurl temp_sparse
+  cd temp_sparse
+  git sparse-checkout init --cone
+  git sparse-checkout set $@
+  pkg=`echo $@ | tr ' ' '\n' | rev | cut -d'/' -f 1 | rev | tr '\n' ' ' `
+  #git checkout $branch -- $@
+  [ -d ../package/custom ] && cd ../package/custom && rm -rf $pkg && cd "$rootdir"/temp_sparse
   mv -n $@ ../
   cd ..
-  rm -rf $localdir
+  rm -rf temp_sparse
   }
-
-  function git_svn() {
+  
+function git_svn() {
   #branch="$1" rurl="$2" localdir="$3" && shift 3
   branch="$1" rurl="$2" && shift 2
-  #git clone -b $branch --depth 1 --filter=blob:none --sparse $rurl $localdir
-  git clone -b $branch --single-branch --no-tags --depth 1 --filter=blob:none --no-checkout $rurl tempxx
-  cd tempxx
-  #git sparse-checkout init --cone
-  #git sparse-checkout set $@
-  git checkout $branch -- $@
+  rootdir="$PWD"
+  git clone -b $branch --depth 1 --filter=blob:none --sparse $rurl temp_svn
+  #git clone -b $branch --single-branch --no-tags --depth 1 --filter=blob:none --no-checkout $rurl temp_svn
+  cd temp_svn
+  git sparse-checkout init --cone
+  git sparse-checkout set $@
+  pkg=`echo $@ | tr ' ' '\n' | rev | cut -d'/' -f 1 | rev | tr '\n' ' ' `
+  #git checkout $branch -- $@
+  [ -d ../package/custom ] && cd ../package/custom && rm -rf $pkg && cd "$rootdir"/temp_svn
   mv -n $@ ../
   cd ..
-  rm -rf tempxx
+  rm -rf temp_svn
   }
+  
 function mvdir() {
 mv -n `find $1/* -maxdepth 0 -type d` ./
 rm -rf $1
 }
 
 ###########自定义部分##################
-git_sparse_clone master "https://github.com/Hyy2001X/AutoBuild-Packages" "Hyy2001X" luci-app-npc
+git_sparse_clone master https://github.com/Hyy2001X/AutoBuild-Packages luci-app-npc
 rm -rf luci-app-filebrowser filebrowser
-git_sparse_clone main "https://github.com/Lienol/openwrt-package" "Lienol" luci-app-filebrowser
+git_sparse_clone main https://github.com/Lienol/openwrt-package luci-app-filebrowser
 git clone --depth 1 https://github.com/Leo-Jo-My/luci-theme-opentomcat
 git clone --depth 1 https://github.com/Leo-Jo-My/luci-theme-opentomato
 rm -rf luci-app-wechatpush
@@ -46,28 +55,26 @@ git clone -b main https://github.com/padavanonly/luci-app-mwan3helper-chinaroute
 
 
 #kenzok8/wall(将kenzok8自建常用的内核更改为breakings/OpenWrt/blob/main/diy-part2.sh中的源，只添加breakings中有的源)
-git_sparse_clone main "https://github.com/xiaorouji/openwrt-passwall-packages" "xiaorouji" chinadns-ng dns2socks hysteria ipt2socks \
-microsocks pdnsd-alt shadowsocks-rust simple-obfs sing-box ssocks tcping trojan-go trojan-plus trojan v2ray-core v2ray-plugin geoview
+git_sparse_clone main https://github.com/xiaorouji/openwrt-passwall-packages chinadns-ng dns2socks hysteria ipt2socks microsocks pdnsd-alt shadowsocks-rust simple-obfs sing-box ssocks tcping trojan-go trojan-plus trojan v2ray-core v2ray-plugin geoview
 
-git_sparse_clone master "https://github.com/fw876/helloworld" "fw876" dns2tcp lua-neturl redsocks2 shadowsocksr-libev v2ray-geodata
+git_sparse_clone master https://github.com/fw876/helloworld dns2tcp lua-neturl redsocks2 shadowsocksr-libev v2ray-geodata
 
 rm -rf brook dockerd gost naiveproxy smartdns xray-core xray-plugin
-git_sparse_clone main "https://github.com/breakings/OpenWrt" "breakings" general/brook general/dockerd general/gost general/naiveproxy \
-general/smartdns general/xray-core general/xray-plugin
+git_sparse_clone main https://github.com/breakings/OpenWrt general/brook general/dockerd general/gost general/naiveproxy general/smartdns general/xray-core general/xray-plugin
 
-#git_sparse_clone packages-18.06 "https://github.com/Boos4721/OpenWrt-Packages" "Boos4721" adbyby
+#git_sparse_clone packages-18.06 https://github.com/Boos4721/OpenWrt-Packages adbyby
 #git clone --depth 1 https://github.com/aboutboy/luci-theme-butongwifi
-#git_sparse_clone master "https://github.com/Aslin-Ameng/luci-theme-Night" "Aslin-Ameng" luci-theme-Night
+#git_sparse_clone master https://github.com/Aslin-Ameng/luci-theme-Night luci-theme-Night
 #git clone --depth 1 https://github.com/gngpp/luci-theme-design
 #git clone --depth 1 https://github.com/gngpp/luci-app-design-config
-#git_sparse_clone master "https://github.com/kiddin9/openwrt-packages" "kiddin9" luci-app-bypass
+#git_sparse_clone master https://github.com/kiddin9/openwrt-packages luci-app-bypass
 #git clone --depth 1 https://github.com/jerrykuku/lua-maxminddb
 #git clone --depth 1 https://github.com/immortalwrt/homeproxy
-#git_sparse_clone master "https://github.com/coolsnowwolf/luci" "coolsnowwolf" applications/luci-app-accesscontrol
+#git_sparse_clone master https://github.com/coolsnowwolf/luci applications/luci-app-accesscontrol
 git clone --depth 1 https://github.com/gngpp/luci-app-watchcat-plus
 
 rm -rf msd_lite
-git_sparse_clone master "https://github.com/immortalwrt/packages" "immortalwrt" net/msd_lite
+git_sparse_clone master https://github.com/immortalwrt/packages net/msd_lite
 #更换msd_lite源为修改版（可以反向代理）
 sed -i 's|PKG_SOURCE_URL:=.*|PKG_SOURCE_URL:=https://github.com/fichenx/msd_lite.git|g'  msd_lite/Makefile
 sed -i 's|PKG_SOURCE_DATE:=.*|PKG_SOURCE_DATE:=2024-12-16|g'  msd_lite/Makefile
@@ -126,20 +133,20 @@ git_svn main https://github.com/fichenx/packages n3n
 git_svn main https://github.com/lmq8267/luci-app-vnt luci-app-vnt
 
 ############暂时替换原kenzok8/small-package/.github/diy/main.sh中无法使用的svn命令############
-git_sparse_clone master "https://github.com/immortalwrt/luci" "temp" applications/luci-app-homeproxy
-git_sparse_clone master "https://github.com/coolsnowwolf/luci" "temp" libs/luci-lib-ipkg
-git_sparse_clone master "https://github.com/x-wrt/packages" "temp" net/nft-qos
-git_sparse_clone master "https://github.com/x-wrt/luci" "temp" applications/luci-app-nft-qos
-git_sparse_clone other "https://github.com/Lienol/openwrt-package" "temp" lean/luci-app-autoreboot
-git_sparse_clone develop "https://github.com/Ysurac/openmptcprouter-feeds" "temp" luci-app-iperf
-git_sparse_clone master "https://github.com/QiuSimons/OpenWrt-Add" "temp" luci-app-irqbalance
-git_sparse_clone main "https://github.com/sirpdboy/sirpdboy-package" "temp" luci-app-control-speedlimit
-#git_sparse_clone master "https://github.com/xiaoxifu64/immortalwrt" "temp" package/rooter/ext-rooter-basic
-git_sparse_clone openwrt-22.03 "https://github.com/openwrt/luci" "temp" applications/luci-app-wireguard
-git_sparse_clone main "https://github.com/lucikap/Brukamen" "temp" luci-app-ua2f
-git_sparse_clone master "https://github.com/openwrt/packages" "temp" net/shadowsocks-libev
-git_sparse_clone main "https://github.com/kenzok8/jell" "temp" vsftpd-alt
-git_sparse_clone main "https://github.com/kenzok8/jell" "temp" luci-app-bridge
+git_sparse_clone master https://github.com/immortalwrt/luci applications/luci-app-homeproxy
+git_sparse_clone master https://github.com/coolsnowwolf/luci libs/luci-lib-ipkg
+git_sparse_clone master https://github.com/x-wrt/packages net/nft-qos
+git_sparse_clone master https://github.com/x-wrt/luci applications/luci-app-nft-qos
+git_sparse_clone other https://github.com/Lienol/openwrt-package lean/luci-app-autoreboot
+git_sparse_clone develop https://github.com/Ysurac/openmptcprouter-feeds luci-app-iperf
+git_sparse_clone master https://github.com/QiuSimons/OpenWrt-Add luci-app-irqbalance
+git_sparse_clone main https://github.com/sirpdboy/sirpdboy-package luci-app-control-speedlimit
+#git_sparse_clone master https://github.com/xiaoxifu64/immortalwrt package/rooter/ext-rooter-basic
+git_sparse_clone openwrt-22.03 https://github.com/openwrt/luci applications/luci-app-wireguard
+git_sparse_clone main https://github.com/lucikap/Brukamen luci-app-ua2f
+git_sparse_clone master https://github.com/openwrt/packages net/shadowsocks-libev
+git_sparse_clone main https://github.com/kenzok8/jell vsftpd-alt
+git_sparse_clone main https://github.com/kenzok8/jell luci-app-bridge
 ############暂时替换原kenzok8/small-package/.github/diy/main.sh中无法使用的svn命令############
 
 
