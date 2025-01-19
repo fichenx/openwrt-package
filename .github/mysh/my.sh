@@ -129,6 +129,9 @@ git_svn master https://github.com/fw876/helloworld tuic-client shadow-tls
 #####n3n#####
 git_svn main https://github.com/fichenx/packages n3n
 
+#####rtp2httpd#####
+git_svn main https://github.com/stackia/rtp2httpd openwrt-support/luci-app-rtp2httpd openwrt-support/rtp2httpd
+
 #####luci-app-vnt#####
 git_svn main https://github.com/lmq8267/luci-app-vnt luci-app-vnt
 
