@@ -882,7 +882,7 @@ $razordVersion = getRazordVersion();
 </script>
 
 <div class="modal fade" id="filesModal" tabindex="-1" aria-labelledby="filesModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-  <div class="modal-dialog custom-modal-width" style="max-width: 60%; margin: 30px auto;">
+  <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="filesModalLabel">上传并管理背景图片/视频</h5>
@@ -954,10 +954,7 @@ $razordVersion = getRazordVersion();
                             <td class='align-middle' data-label='文件类型'>$fileType</td>
                             <td class='align-middle' data-label='预览'>";
                     if (isVideo($file)) {
-                        echo "<video id='video-player' class='video-js vjs-default-skin' width='200' controls style='display: block; margin-left: auto; margin-right: auto;'>
-                                <source src='$fileUrl' type='video/" . strtolower(pathinfo($file, PATHINFO_EXTENSION)) . "'>
-                                Your browser does not support the video tag.
-                              </video>";
+                        echo "<video width='200' controls><source src='$fileUrl' type='video/mp4'>Your browser does not support the video tag.</video>";
                     } elseif (isImage($file)) {
                         echo "<img src='$fileUrl' alt='$file' style='width: 200px; height: auto;'>";
                     } else {
@@ -1167,52 +1164,84 @@ function formatFileSize($size) {
 
 <script>
 function setBackground(filename, type, action = 'set') {
+    const bodyData = 'filename=' + encodeURIComponent(filename) + '&type=' + type;
+
     if (action === 'set') {
-        if (type === 'image') {
-            if (confirm("确定要将此图片设置为背景吗？")) {
-                fetch('/nekobox/set_background.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: 'action=set&filename=' + encodeURIComponent(filename) + '&type=image'
-                })
-                .then(response => response.text())
-                .then(data => {
-                    alert(data);  
-                    location.reload();  
-                })
-                .catch(error => console.error('Error:', error));
-            }
-        } else if (type === 'video') {
-            if (confirm("确定要将此视频设置为背景吗？")) {
-                fetch('/nekobox/set_background.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: 'action=set&filename=' + encodeURIComponent(filename) + '&type=video'
-                })
-                .then(response => response.text())
-                .then(data => {
-                    alert(data);  
-                    location.reload(); 
-                })
-                .catch(error => console.error('Error:', error));
-            }
-        }
-    } else if (action === 'remove') {
-        if (confirm("确定要删除背景吗？")) {
-            fetch('/nekobox/set_background.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'action=remove'
-            })
-            .then(response => response.text())
-            .then(data => {
-                alert(data);  
-                location.reload(); 
-            })
-            .catch(error => console.error('Error:', error));
-        }
+        fetch('/nekobox/set_background.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'action=set&' + bodyData
+        })
+        .then(response => response.text())
+        .then(data => {
+            sessionStorage.setItem('notificationMessage', data);
+            sessionStorage.setItem('notificationType', 'success');
+            location.reload(); 
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            sessionStorage.setItem('notificationMessage', "操作失败，请稍后再试");
+            sessionStorage.setItem('notificationType', 'error');
+            location.reload();  
+        });
+    }
+
+    else if (action === 'remove') {
+        fetch('/nekobox/set_background.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'action=remove'
+        })
+        .then(response => response.text())
+        .then(data => {
+            sessionStorage.setItem('notificationMessage', data);
+            sessionStorage.setItem('notificationType', 'success');
+            location.reload(); 
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            sessionStorage.setItem('notificationMessage', "删除失败，请稍后再试");
+            sessionStorage.setItem('notificationType', 'error');
+            location.reload();  
+        });
     }
 }
+
+function showNotification(message, type = 'success') {
+    var notification = document.createElement('div');
+    notification.style.position = 'fixed';
+    notification.style.top = '10px';
+    notification.style.left = '30px'; 
+    notification.style.padding = '10px';
+    notification.style.borderRadius = '5px';
+    notification.style.zIndex = '9999';
+    notification.style.color = '#fff'; 
+    notification.innerText = message;
+
+    if (type === 'success') {
+        notification.style.backgroundColor = '#4CAF50'; 
+    } else if (type === 'error') {
+        notification.style.backgroundColor = '#F44336'; 
+    }
+
+    document.body.appendChild(notification);
+
+    setTimeout(function() {
+        notification.style.display = 'none';
+    }, 5000); 
+}
+
+window.addEventListener('load', function() {
+    var message = sessionStorage.getItem('notificationMessage');
+    var type = sessionStorage.getItem('notificationType');
+
+    if (message) {
+        showNotification(message, type); 
+        sessionStorage.removeItem('notificationMessage');
+        sessionStorage.removeItem('notificationType');
+    }
+});
+
 </script>
 
 <script>
