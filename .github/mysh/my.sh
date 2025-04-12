@@ -55,9 +55,9 @@ git clone -b main https://github.com/padavanonly/luci-app-mwan3helper-chinaroute
 
 
 #kenzok8/wall(将kenzok8自建常用的内核更改为breakings/OpenWrt/blob/main/diy-part2.sh中的源，只添加breakings中有的源)
-git_sparse_clone main https://github.com/xiaorouji/openwrt-passwall-packages chinadns-ng dns2socks hysteria ipt2socks microsocks pdnsd-alt shadowsocks-rust simple-obfs sing-box ssocks tcping trojan-go trojan-plus trojan v2ray-core v2ray-plugin geoview
+#git_sparse_clone main https://github.com/xiaorouji/openwrt-passwall-packages pdnsd-alt sing-box ssocks trojan-go trojan-plus geoview
 
-git_sparse_clone master https://github.com/fw876/helloworld dns2tcp lua-neturl redsocks2 shadowsocksr-libev v2ray-geodata
+git_sparse_clone master https://github.com/fw876/helloworld dns2tcp lua-neturl redsocks2 shadowsocks-libev shadowsocksr-libev v2ray-geodata chinadns-ng dns2socks hysteria ipt2socks microsocks shadowsocks-rust simple-obfs tcping trojan v2ray-core v2ray-plugin
 
 rm -rf brook dockerd gost naiveproxy smartdns xray-core xray-plugin
 git_sparse_clone main https://github.com/breakings/OpenWrt general/brook general/dockerd general/gost general/naiveproxy general/smartdns general/xray-core general/xray-plugin
