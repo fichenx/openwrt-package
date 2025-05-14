@@ -11,7 +11,7 @@ PKG_GIT_URL:=github.com/moby/moby
 PKG_GIT_REF:=v$(PKG_VERSION)
 PKG_SOURCE_URL:=https://codeload.$(PKG_GIT_URL)/tar.gz/$(PKG_GIT_REF)?
 PKG_HASH:=5c9402ef5886be7683260a424c02de199b45b7e15633d90e03faaf672f7041fc
-PKG_GIT_SHORT_COMMIT:=4eba377
+PKG_GIT_SHORT_COMMIT:=01f442b
 
 PKG_MAINTAINER:=Gerard Ryan <G.M0N3Y.2503@gmail.com>
 
@@ -112,7 +112,7 @@ define Build/Prepare
 	( \
 		EXPECTED_PKG_GIT_SHORT_COMMIT=$$$$( $(CURDIR)/git-short-commit.sh '$(PKG_GIT_URL)' '$(PKG_GIT_REF)' '$(TMP_DIR)/git-short-commit/$(PKG_NAME)-$(PKG_VERSION)' ); \
 		if [ "$$$${EXPECTED_PKG_GIT_SHORT_COMMIT}" != "$(strip $(PKG_GIT_SHORT_COMMIT))" ]; then \
-			echo "ERROR: Expected 'PKG_GIT_SHORT_COMMIT:=4eba377
+			echo "ERROR: Expected 'PKG_GIT_SHORT_COMMIT:=01f442b
 			exit 1; \
 		fi \
 	)
