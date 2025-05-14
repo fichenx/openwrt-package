@@ -187,7 +187,7 @@ sed -i 's|PKG_GIT_SHORT_COMMIT:=.*|PKG_GIT_SHORT_COMMIT:=01f442b|g' dockerd/Make
 #使用28.1.1（2025.4.18）版docker
 sed -i 's|PKG_VERSION:=.*|PKG_VERSION:=28.1.1|g' docker/Makefile
 sed -i 's|PKG_HASH:=.*|PKG_HASH:=98b305725d453b6802a4df1e4c8184b66cf8d74e9050bbf3d92b2804621cb9f6|g' docker/Makefile
-sed -i 's|PKG_GIT_SHORT_COMMIT:=.*|PKG_GIT_SHORT_COMMIT:=4eba377|g' dockerd/Makefile
+sed -i 's|PKG_GIT_SHORT_COMMIT:=.*|PKG_GIT_SHORT_COMMIT:=4eba377|g' docker/Makefile
 
 
 
