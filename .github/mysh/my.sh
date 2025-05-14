@@ -60,7 +60,7 @@ git clone -b main https://github.com/padavanonly/luci-app-mwan3helper-chinaroute
 git_sparse_clone master https://github.com/fw876/helloworld dns2tcp lua-neturl redsocks2 shadowsocks-libev shadowsocksr-libev v2ray-geodata chinadns-ng dns2socks hysteria ipt2socks microsocks shadowsocks-rust simple-obfs tcping trojan v2ray-core v2ray-plugin
 
 rm -rf brook dockerd gost naiveproxy smartdns xray-core xray-plugin
-git_sparse_clone main https://github.com/breakings/OpenWrt general/brook general/dockerd general/gost general/naiveproxy general/smartdns general/xray-core general/xray-plugin
+git_sparse_clone main https://github.com/breakingbadboy/OpenWrt general/brook general/docker general/dockerd general/gost general/naiveproxy general/smartdns general/xray-core general/xray-plugin
 
 #git_sparse_clone packages-18.06 https://github.com/Boos4721/OpenWrt-Packages adbyby
 #git clone --depth 1 https://github.com/aboutboy/luci-theme-butongwifi
@@ -178,6 +178,18 @@ sed -i 's|../../lang/golang/golang-package.mk|$(TOPDIR)/feeds/packages/lang/gola
 sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-app-nft-qos/Makefile
 sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-app-wireguard/Makefile
 sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-lib-ipkg/Makefile
+
+#使用28.1.1（2025.4.18）版dockerd
+sed -i 's|PKG_VERSION:=.*|PKG_VERSION:=28.1.1|g' dockerd/Makefile
+sed -i 's|PKG_HASH:=.*|PKG_HASH:=5c9402ef5886be7683260a424c02de199b45b7e15633d90e03faaf672f7041fc|g' dockerd/Makefile
+sed -i 's|PKG_GIT_SHORT_COMMIT:=.*|PKG_GIT_SHORT_COMMIT:=01f442b|g' dockerd/Makefile
+
+#使用28.1.1（2025.4.18）版docker
+sed -i 's|PKG_VERSION:=.*|PKG_VERSION:=28.1.1|g' docker/Makefile
+sed -i 's|PKG_HASH:=.*|PKG_HASH:=98b305725d453b6802a4df1e4c8184b66cf8d74e9050bbf3d92b2804621cb9f6|g' docker/Makefile
+sed -i 's|PKG_GIT_SHORT_COMMIT:=.*|PKG_GIT_SHORT_COMMIT:=4eba377|g' dockerd/Makefile
+
+
 
 ######################################
 
