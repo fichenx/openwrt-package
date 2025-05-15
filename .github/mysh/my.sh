@@ -193,6 +193,10 @@ sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-lib-ipkg/Makefile
 rm -rf docker dockerd
 git_svn master https://github.com/coolsnowwolf/packages utils/docker utils/dockerd
 
+#####xray-geodata-cut#####
+git clone --depth 1 https://github.com/yichya/openwrt-xray-geodata-cut
+
+
 
 
 ######################################
