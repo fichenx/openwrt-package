@@ -190,6 +190,7 @@ sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-lib-ipkg/Makefile
 #sed -i 's|PKG_GIT_SHORT_COMMIT:=.*|PKG_GIT_SHORT_COMMIT:=4eba377|g' docker/Makefile
 
 #####使用lede的docker和dockerd#####
+rm -rf docker dockerd
 git_svn master https://github.com/coolsnowwolf/packages utils/docker utils/dockerd
 
 
