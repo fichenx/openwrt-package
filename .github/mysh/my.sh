@@ -12,35 +12,22 @@ function git_sparse_clone() {
   cd temp_sparse
   git sparse-checkout init --cone
   git sparse-checkout set $@
-  pkg=`echo $@ | tr ' ' '\n' | rev | cut -d'/' -f 1 | rev | tr '\n' ' ' `
+  #pkg=`echo $@ | tr ' ' '\n' | rev | cut -d'/' -f 1 | rev | tr '\n' ' ' `
   #git checkout $branch -- $@
-  [ -d ../package/custom ] && cd ../package/custom && rm -rf $pkg && cd "$rootdir"/temp_sparse
-  mv -n $@ ../
+  #[ -d ../package/custom ] && cd ../package/custom && rm -rf $pkg && cd "$rootdir"/temp_sparse
+  mv -f $@ ../
   cd ..
   rm -rf temp_sparse
   }
-  
-function git_svn() {
-  #branch="$1" rurl="$2" localdir="$3" && shift 3
-  branch="$1" rurl="$2" && shift 2
-  rootdir="$PWD"
-  git clone -b $branch --depth 1 --filter=blob:none --sparse $rurl temp_svn
-  #git clone -b $branch --single-branch --no-tags --depth 1 --filter=blob:none --no-checkout $rurl temp_svn
-  cd temp_svn
-  git sparse-checkout init --cone
-  git sparse-checkout set $@
-  pkg=`echo $@ | tr ' ' '\n' | rev | cut -d'/' -f 1 | rev | tr '\n' ' ' `
-  #git checkout $branch -- $@
-  [ -d ../package/custom ] && cd ../package/custom && rm -rf $pkg && cd "$rootdir"/temp_svn
-  mv -n $@ ../
-  cd ..
-  rm -rf temp_svn
-  }
-  
+ 
 function mvdir() {
 mv -n `find $1/* -maxdepth 0 -type d` ./
 rm -rf $1
 }
+
+
+echo "开始 同步自定义插件（mysh）……"
+echo "========================="
 
 ###########自定义部分##################
 git_sparse_clone master https://github.com/Hyy2001X/AutoBuild-Packages luci-app-npc
@@ -85,33 +72,33 @@ git clone --depth 1 https://github.com/sirpdboy/luci-app-ddns-go ddnsgo && mv -n
 
 
 #####luci-theme-design#####
-git_svn main https://github.com/fichenx/packages luci-theme-design
-git_svn main https://github.com/fichenx/packages luci-app-design-config
+git_sparse_clone main https://github.com/fichenx/packages luci-theme-design
+git_sparse_clone main https://github.com/fichenx/packages luci-app-design-config
 
 #####luci-app-watchcat-plus#####
-git_svn main https://github.com/fichenx/packages luci-app-watchcat-plus
+git_sparse_clone main https://github.com/fichenx/packages luci-app-watchcat-plus
 
 #####bypass依赖#####
-git_svn main https://github.com/fichenx/packages luci-app-bypass
-git_svn master https://github.com/fw876/helloworld shadowsocksr-libev redsocks2 lua-neturl dns2tcp
+git_sparse_clone main https://github.com/fichenx/packages luci-app-bypass
+git_sparse_clone master https://github.com/fw876/helloworld shadowsocksr-libev redsocks2 lua-neturl dns2tcp
 
 #####luci-app-v2raya依赖#####
-git_svn master https://github.com/v2rayA/v2raya-openwrt v2raya
+git_sparse_clone master https://github.com/v2rayA/v2raya-openwrt v2raya
 
 #####luci-app-lucky及依赖#####
 rm -rf luci-app-lucky lucky
-git_svn main https://github.com/gdy666/luci-app-lucky luci-app-lucky lucky
+git_sparse_clone main https://github.com/gdy666/luci-app-lucky luci-app-lucky lucky
 
 #####luci-app-vssr#####
 git clone -b master https://github.com/MilesPoupart/luci-app-vssr luci-app-vssr
 
 #####luci-app-socat#####
 rm -rf luci-app-socat
-git_svn main https://github.com/chenmozhijin/luci-app-socat luci-app-socat
+git_sparse_clone main https://github.com/chenmozhijin/luci-app-socat luci-app-socat
 
 #####luci-app-mosdns mosdns v2dat#####
 rm -rf luci-app-mosdns mosdns v2dat
-git_svn v5-lua https://github.com/sbwml/luci-app-mosdns luci-app-mosdns mosdns v2dat 
+git_sparse_clone v5-lua https://github.com/sbwml/luci-app-mosdns luci-app-mosdns mosdns v2dat 
 
 #####luci-app-ikoolproxy#####
 rm -rf luci-app-ikoolproxy luci-app-godproxy
@@ -121,19 +108,36 @@ git clone -b main https://github.com/ilxp/luci-app-ikoolproxy luci-app-ikoolprox
 git clone --depth=1 https://github.com/mchome/openwrt-dogcom.git
 
 #####urllogger#####
-git_svn master https://github.com/x-wrt/com.x-wrt urllogger
+git_sparse_clone master https://github.com/x-wrt/com.x-wrt urllogger
 
 #####tuic-client、shadow-tls#####
-git_svn master https://github.com/fw876/helloworld tuic-client shadow-tls
+git_sparse_clone master https://github.com/fw876/helloworld tuic-client shadow-tls
 
 #####n3n#####
-git_svn main https://github.com/fichenx/packages n3n
+git_sparse_clone main https://github.com/fichenx/packages n3n
 
 #####rtp2httpd#####
-git_svn main https://github.com/stackia/rtp2httpd openwrt-support/luci-app-rtp2httpd openwrt-support/rtp2httpd
+git_sparse_clone main https://github.com/stackia/rtp2httpd openwrt-support/luci-app-rtp2httpd openwrt-support/rtp2httpd
 
 #####luci-app-vnt#####
-git_svn main https://github.com/lmq8267/luci-app-vnt luci-app-vnt
+git_sparse_clone main https://github.com/lmq8267/luci-app-vnt luci-app-vnt
+
+#####使用lede的docker和dockerd#####
+rm -rf docker dockerd
+git_sparse_clone master https://github.com/coolsnowwolf/packages utils/docker utils/dockerd
+
+#####xray-geodata-cut#####
+git clone --depth 1 https://github.com/yichya/openwrt-xray-geodata-cut
+
+#####luci-app-taskplan 任务设置2.0版#####
+git_sparse_clone master https://github.com/sirpdboy/luci-app-taskplan luci-app-taskplan
+
+#####luci-app-netspeedtest 网速测试lua版#####
+git_sparse_clone lua https://github.com/sirpdboy/luci-app-netspeedtest luci-app-netspeedtest homebox
+
+#####luci-app-parentcontrol 专为手机用户制作：家长控制 ，可以按时间控制机器，端口和关键字过滤等。#####
+git clone --depth 1 https://github.com/sirpdboy/luci-app-parentcontrol
+
 
 ############暂时替换原kenzok8/small-package/.github/diy/main.sh中无法使用的svn命令############
 git_sparse_clone master https://github.com/immortalwrt/luci applications/luci-app-homeproxy
@@ -143,13 +147,12 @@ git_sparse_clone master https://github.com/x-wrt/luci applications/luci-app-nft-
 git_sparse_clone other https://github.com/Lienol/openwrt-package lean/luci-app-autoreboot
 git_sparse_clone develop https://github.com/Ysurac/openmptcprouter-feeds luci-app-iperf
 git_sparse_clone master https://github.com/QiuSimons/OpenWrt-Add luci-app-irqbalance
-git_sparse_clone main https://github.com/sirpdboy/sirpdboy-package luci-app-control-speedlimit
+#git_sparse_clone main https://github.com/sirpdboy/sirpdboy-package luci-app-control-speedlimit
 #git_sparse_clone master https://github.com/xiaoxifu64/immortalwrt package/rooter/ext-rooter-basic
 git_sparse_clone openwrt-22.03 https://github.com/openwrt/luci applications/luci-app-wireguard
 git_sparse_clone main https://github.com/lucikap/Brukamen luci-app-ua2f
 git_sparse_clone master https://github.com/openwrt/packages net/shadowsocks-libev
-git_sparse_clone main https://github.com/kenzok8/jell vsftpd-alt
-git_sparse_clone main https://github.com/kenzok8/jell luci-app-bridge
+git_sparse_clone main https://github.com/kenzok8/jell vsftpd-alt luci-app-bridge
 ############暂时替换原kenzok8/small-package/.github/diy/main.sh中无法使用的svn命令############
 
 
@@ -188,13 +191,6 @@ sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-lib-ipkg/Makefile
 #sed -i 's|PKG_VERSION:=.*|PKG_VERSION:=28.1.1|g' docker/Makefile
 #sed -i 's|PKG_HASH:=.*|PKG_HASH:=98b305725d453b6802a4df1e4c8184b66cf8d74e9050bbf3d92b2804621cb9f6|g' docker/Makefile
 #sed -i 's|PKG_GIT_SHORT_COMMIT:=.*|PKG_GIT_SHORT_COMMIT:=4eba377|g' docker/Makefile
-
-#####使用lede的docker和dockerd#####
-rm -rf docker dockerd
-git_svn master https://github.com/coolsnowwolf/packages utils/docker utils/dockerd
-
-#####xray-geodata-cut#####
-git clone --depth 1 https://github.com/yichya/openwrt-xray-geodata-cut
 
 
 
