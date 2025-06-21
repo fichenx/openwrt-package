@@ -5,12 +5,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=v2ray-core
-PKG_VERSION:=5.31.0
+PKG_VERSION:=5.33.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/v2fly/v2ray-core/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=20895d4200d3b7906a3fba90690cc2e27239989acc9c31601f40f2f71827e2e5
+PKG_HASH:=44b768e0048cf2e68f885f08ceb95ee29eea16a5dbb3b4cb9920d55ce691fa9f
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE
@@ -31,7 +31,7 @@ include $(INCLUDE_DIR)/package.mk
 include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
 
 define Package/v2ray/template
-  TITLE:=A proxy platform to bypass network restrictions
+  TITLE:=A platform for building proxies to bypass network restrictions
   SECTION:=net
   CATEGORY:=Network
   URL:=https://www.v2fly.org
