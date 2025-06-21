@@ -123,8 +123,8 @@ git_sparse_clone main https://github.com/stackia/rtp2httpd openwrt-support/luci-
 git_sparse_clone main https://github.com/lmq8267/luci-app-vnt luci-app-vnt
 
 #####使用lede的docker和dockerd#####
-rm -rf docker dockerd
-git_sparse_clone master https://github.com/coolsnowwolf/packages utils/docker utils/dockerd
+#rm -rf docker dockerd
+#git_sparse_clone master https://github.com/coolsnowwolf/packages utils/docker utils/dockerd
 
 #####xray-geodata-cut#####
 git clone --depth 1 https://github.com/yichya/openwrt-xray-geodata-cut
