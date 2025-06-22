@@ -8,7 +8,7 @@ echo "========================="
 
 
 #删除sirpdboy/netspeedtest（JS版）)
-sed -i "s|git clone --depth 1 https://github.com/sirpdboy/netspeedtest|#git clone --depth 1 https://github.com/sirpdboy/netspeedtest|g" .github/diy/main.sh
+#sed -i "s|git clone --depth 1 https://github.com/sirpdboy/netspeedtest|#git clone --depth 1 https://github.com/sirpdboy/netspeedtest|g" .github/diy/main.sh
 
 #修复diy/main.sh中格式错误
 sed -i "s|'applications/luci-app-watchcat \'|'applications/luci-app-watchcat'|g" .github/diy/main.sh
