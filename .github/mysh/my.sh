@@ -138,6 +138,15 @@ git_sparse_clone lua https://github.com/sirpdboy/luci-app-netspeedtest luci-app-
 #####luci-app-parentcontrol 专为手机用户制作：家长控制 ，可以按时间控制机器，端口和关键字过滤等。#####
 git clone --depth 1 https://github.com/sirpdboy/luci-app-parentcontrol
 
+#####删除kenzok8/small-package中的js版luci-app，替换为18.06版
+rm -rf luci-theme-argon luci-app-argon-config luci-theme-kucat
+git clone --depth 1 -b 18.06 https://github.com/jerrykuku/luci-theme-argon
+git clone --depth 1 -b 18.06 https://github.com/jerrykuku/luci-app-argon-config
+git clone --depth 1 https://github.com/sirpdboy/luci-theme-kucat -b 18.06 --depth 1
+
+#####删除kenzok8/small-package中的js版luci-app，无替换版本
+rm -rf luci-app-homeproxy
+
 
 ############暂时替换原kenzok8/small-package/.github/diy/main.sh中无法使用的svn命令############
 git_sparse_clone master https://github.com/immortalwrt/luci applications/luci-app-homeproxy
