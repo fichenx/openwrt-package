@@ -138,6 +138,10 @@ git_sparse_clone master https://github.com/sirpdboy/luci-app-taskplan luci-app-t
 #####luci-app-parentcontrol 专为手机用户制作：家长控制 ，可以按时间控制机器，端口和关键字过滤等。#####
 git clone --depth 1 https://github.com/sirpdboy/luci-app-parentcontrol
 
+#####删除lua版ipk,替换为js版本#####
+rm -rf luci-app-timecontrol
+git_sparse_clone main https://github.com/sirpdboy/luci-app-timecontrol luci-app-nft-timecontrol
+
 
 ############暂时替换原kenzok8/small-package/.github/diy/main.sh中无法使用的svn命令############
 git_sparse_clone master https://github.com/immortalwrt/luci applications/luci-app-homeproxy
