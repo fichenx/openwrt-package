@@ -31,14 +31,11 @@ echo "========================="
 
 ###########自定义部分##################
 git_sparse_clone master https://github.com/Hyy2001X/AutoBuild-Packages luci-app-npc
-rm -rf luci-app-filebrowser filebrowser
-git_sparse_clone main https://github.com/Lienol/openwrt-package luci-app-filebrowser
 #git clone --depth 1 https://github.com/Leo-Jo-My/luci-theme-opentomcat
 git clone --depth 1 https://github.com/Leo-Jo-My/luci-theme-opentomato
 rm -rf luci-app-wechatpush
 git clone -b master https://github.com/tty228/luci-app-wechatpush luci-app-wechatpush
 
-git clone -b main https://github.com/padavanonly/luci-app-mwan3helper-chinaroute luci-app-mwan3helper-chinaroute
 
 
 #kenzok8/wall(将kenzok8自建常用的内核更改为breakings/OpenWrt/blob/main/diy-part2.sh中的源，只添加breakings中有的源)
