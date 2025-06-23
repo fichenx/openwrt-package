@@ -1,6 +1,6 @@
 {
 	"luci-app-timecontrol": {
-		"description": "Grant UCI access for luci-app-timecontrol",
+		"description": "Grant UCI Internet time control for luci-app-timecontrol",
 		"read": {
 			"uci": [ "timecontrol" ]
 		},
