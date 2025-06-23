@@ -144,8 +144,6 @@ git clone --depth 1 -b 18.06 https://github.com/jerrykuku/luci-theme-argon
 git clone --depth 1 -b 18.06 https://github.com/jerrykuku/luci-app-argon-config
 git clone --depth 1 https://github.com/sirpdboy/luci-theme-kucat -b 18.06 --depth 1
 
-#####删除kenzok8/small-package中的js版luci-app，无替换版本
-rm -rf luci-app-homeproxy
 
 
 ############暂时替换原kenzok8/small-package/.github/diy/main.sh中无法使用的svn命令############
