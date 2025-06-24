@@ -71,7 +71,7 @@ git clone --depth 1 https://github.com/sirpdboy/luci-app-ddns-go ddnsgo && mv -n
 #####luci-theme-design#####
 #git_sparse_clone js https://github.com/fichenx/packages luci-theme-design
 #git_sparse_clone main https://github.com/fichenx/packages luci-app-design-config
-git_sparse_clone openwrt-24.10 https://github.com/coolsnowwolf/luci themes/luci-theme-design
+git_sparse_clone openwrt-23.05 https://github.com/coolsnowwolf/luci themes/luci-theme-design
 
 #####luci-app-watchcat-plus#####
 #git_sparse_clone main https://github.com/fichenx/packages luci-app-watchcat-plus
