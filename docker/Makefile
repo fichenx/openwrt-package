@@ -10,8 +10,8 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_GIT_URL:=github.com/docker/cli
 PKG_GIT_REF:=v$(PKG_VERSION)
 PKG_SOURCE_URL:=https://codeload.$(PKG_GIT_URL)/tar.gz/$(PKG_GIT_REF)?
-PKG_HASH:=df7d44387166d90954e290dfbe0a278649bf71d0e89933615bdc0757580b68e4
-PKG_GIT_SHORT_COMMIT:=ce12230 # SHA1 used within the docker executables
+PKG_HASH:=0ac18927138cd2582e02277d365174a118b962f10084a6bef500a58de705e094
+PKG_GIT_SHORT_COMMIT:=38b7060 # SHA1 used within the docker executables
 
 PKG_MAINTAINER:=Gerard Ryan <G.M0N3Y.2503@gmail.com>
 
