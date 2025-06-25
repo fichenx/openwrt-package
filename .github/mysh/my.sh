@@ -191,15 +191,15 @@ sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-app-nft-qos/Makefil
 sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-app-wireguard/Makefile
 sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-lib-ipkg/Makefile
 
-#使用28.1.1（2025.4.18）版dockerd
-#sed -i 's|PKG_VERSION:=.*|PKG_VERSION:=28.1.1|g' dockerd/Makefile
-#sed -i 's|PKG_HASH:=.*|PKG_HASH:=5c9402ef5886be7683260a424c02de199b45b7e15633d90e03faaf672f7041fc|g' dockerd/Makefile
-#sed -i 's|PKG_GIT_SHORT_COMMIT:=.*|PKG_GIT_SHORT_COMMIT:=01f442b|g' dockerd/Makefile
+#更新dockerd
+sed -i 's|PKG_VERSION:=.*|PKG_VERSION:=28.3.0|g' dockerd/Makefile
+sed -i 's|PKG_HASH:=.*|PKG_HASH:=99fe19d2a15d3cc56b9bd5e782664a85c2a7027566a4acc5c07ec8d42666362b|g' dockerd/Makefile
+sed -i 's|PKG_GIT_SHORT_COMMIT:=.*|PKG_GIT_SHORT_COMMIT:=265f709|g' dockerd/Makefile
 
-#使用28.1.1（2025.4.18）版docker
-#sed -i 's|PKG_VERSION:=.*|PKG_VERSION:=28.1.1|g' docker/Makefile
-#sed -i 's|PKG_HASH:=.*|PKG_HASH:=98b305725d453b6802a4df1e4c8184b66cf8d74e9050bbf3d92b2804621cb9f6|g' docker/Makefile
-#sed -i 's|PKG_GIT_SHORT_COMMIT:=.*|PKG_GIT_SHORT_COMMIT:=4eba377|g' docker/Makefile
+#更新docker
+sed -i 's|PKG_VERSION:=.*|PKG_VERSION:=28.3.0|g' docker/Makefile
+sed -i 's|PKG_HASH:=.*|PKG_HASH:=0ac18927138cd2582e02277d365174a118b962f10084a6bef500a58de705e094|g' docker/Makefile
+sed -i 's|PKG_GIT_SHORT_COMMIT:=.*|PKG_GIT_SHORT_COMMIT:=38b7060|g' docker/Makefile
 
 
 
