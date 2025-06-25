@@ -11,7 +11,7 @@ PKG_GIT_URL:=github.com/moby/moby
 PKG_GIT_REF:=v$(PKG_VERSION)
 PKG_SOURCE_URL:=https://codeload.$(PKG_GIT_URL)/tar.gz/$(PKG_GIT_REF)?
 PKG_HASH:=99fe19d2a15d3cc56b9bd5e782664a85c2a7027566a4acc5c07ec8d42666362b
-PKG_GIT_SHORT_COMMIT:=c710b88 # SHA1 used within the docker executables
+PKG_GIT_SHORT_COMMIT:=265f709
 
 PKG_MAINTAINER:=Gerard Ryan <G.M0N3Y.2503@gmail.com>
 
@@ -68,10 +68,10 @@ TARGET_LDFLAGS += $(if $(CONFIG_USE_GLIBC),-lc -lgcc_eh)
 # $(2) = relevant dependency '.installer' file
 define EnsureVendoredVersion
 	( \
-		DEP_VER=$$$$( grep --only-matching --perl-regexp '(?<=PKG_VERSION:=)(.*)' "$(1)" ); \
+		DEP_VER=$$$$( grep --only-matching --perl-regexp '(?<=PKG_VERSION:=28.3.0
 		VEN_VER=$$$$( grep --only-matching --perl-regexp '(?<=_VERSION:=v)(.*)(?=})' "$(PKG_BUILD_DIR)/hack/dockerfile/install/$(2)" ); \
 		if [ "$$$${VEN_VER}" != "$$$${DEP_VER}" ]; then \
-			echo "ERROR: Expected 'PKG_VERSION:=$$$${VEN_VER}' in '$(1)', found 'PKG_VERSION:=$$$${DEP_VER}'"; \
+			echo "ERROR: Expected 'PKG_VERSION:=28.3.0
 			exit 1; \
 		fi \
 	)
@@ -101,9 +101,9 @@ define Build/Prepare
 	# Verify CLI is the same version
 	( \
 		CLI_MAKEFILE="../docker/Makefile"; \
-		CLI_VERSION=$$$$( grep --only-matching --perl-regexp '(?<=PKG_VERSION:=)(.*)' "$$$${CLI_MAKEFILE}" ); \
+		CLI_VERSION=$$$$( grep --only-matching --perl-regexp '(?<=PKG_VERSION:=28.3.0
 		if [ "$$$${CLI_VERSION}" != "$(PKG_VERSION)" ]; then \
-			echo "ERROR: Expected 'PKG_VERSION:=$(PKG_VERSION)' in '$$$${CLI_MAKEFILE}', found 'PKG_VERSION:=$$$${CLI_VERSION}'"; \
+			echo "ERROR: Expected 'PKG_VERSION:=28.3.0
 			exit 1; \
 		fi \
 	)
@@ -112,7 +112,7 @@ define Build/Prepare
 	( \
 		EXPECTED_PKG_GIT_SHORT_COMMIT=$$$$( $(CURDIR)/git-short-commit.sh '$(PKG_GIT_URL)' '$(PKG_GIT_REF)' '$(TMP_DIR)/git-short-commit/$(PKG_NAME)-$(PKG_VERSION)' ); \
 		if [ "$$$${EXPECTED_PKG_GIT_SHORT_COMMIT}" != "$(strip $(PKG_GIT_SHORT_COMMIT))" ]; then \
-			echo "ERROR: Expected 'PKG_GIT_SHORT_COMMIT:=$$$${EXPECTED_PKG_GIT_SHORT_COMMIT}', found 'PKG_GIT_SHORT_COMMIT:=$(strip $(PKG_GIT_SHORT_COMMIT))'"; \
+			echo "ERROR: Expected 'PKG_GIT_SHORT_COMMIT:=265f709
 			exit 1; \
 		fi \
 	)
