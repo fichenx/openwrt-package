@@ -20,14 +20,14 @@ e.value = translate("Collecting data...")
 e = t:option(ListValue, "list_type",translate("Control mode"), translate("blacklist:Block the networking of the target address,whitelist:Only allow networking for the target address and block all other addresses."))
 e.rmempty = false
 e:value("blacklist", translate("blacklist"))
-e:value("whitelist", translate("whitelist"))
+-- e:value("whitelist", translate("whitelist"))
 e.default = "blacklist"
 
 e = t:option(ListValue, "chain",translate("Control intensity"), translate("Pay attention to strong control: machines under control will not be able to connect to the software router backend!"))
 e.rmempty = false
-e:value("forward", translate("Ordinary forwarding control"))
+-- e:value("forward", translate("Ordinary forwarding control"))
 e:value("input", translate("Strong inbound control"))
-e.default = "forward"
+e.default = "input"
 
 t = a:section(TypedSection, "device")
 t.template = "cbi/tblsection"
@@ -48,9 +48,9 @@ ipc.neighbors({family = 4, dev = "br-lan"}, function(n)
 		ip:value(n.dest:string(), "%s (%s)" %{ n.dest:string(), n.mac })
 	end
 end)
-ipc.neighbors({family = 4, dev = "br-lan"}, function(n)
+ipc.neighbors({family = 6, dev = "br-lan"}, function(n)
 	if n.mac and n.dest then
-		ip:value(n.mac, "%s (%s)" %{n.mac, n.dest:string() })
+		ip:value(n.dest:string(), "%s (%s)" %{ n.dest:string(), n.mac })
 	end
 end)
 
