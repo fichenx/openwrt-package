@@ -1,4 +1,4 @@
-name: Sync packages
+name: Sync packages for lua
 
 on:
   push:
