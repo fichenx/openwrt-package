@@ -3,7 +3,7 @@ name: Sync packages for lua
 on:
   push:
     paths:
-      - '.github/workflows/wall.yml'
+      - '.github/workflows/lua_wall.yml'
       - '.github/diy/lua.sh'
       - '.github/mysh/my.sh'
       - '.github/mysh/edit_lua.sh'
