@@ -3,7 +3,7 @@ name: Sync packages for js
 on:
   push:
     paths:
-      - '.github/workflows/wall.yml'
+      - '.github/workflows/js_wall.yml'
       - '.github/diy/js.sh'
       - '.github/mysh/my.sh'
       - '.github/mysh/edit_js.sh'
