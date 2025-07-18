@@ -2,6 +2,8 @@ name: Sync packages for lua
 
 on:
   push:
+    branches:
+      - js
     paths:
       - '.github/workflows/lua_wall.yml'
       - '.github/diy/lua.sh'

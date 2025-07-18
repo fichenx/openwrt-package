@@ -2,6 +2,8 @@ name: Sync packages for js
 
 on:
   push:
+    branches:
+      - js
     paths:
       - '.github/workflows/js_wall.yml'
       - '.github/diy/js.sh'
