@@ -34,7 +34,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@main
       with:
-        ref: js
+        ref: lua
         fetch-depth: 0
 
     - name: Initialization environment
