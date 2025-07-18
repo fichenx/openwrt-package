@@ -2,6 +2,8 @@ name: Sync packages for lua
 
 on:
   push:
+    branches:
+      - lua
     paths:
       - '.github/workflows/lua_wall.yml'
       - '.github/diy/lua.sh'
@@ -32,6 +34,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@main
       with:
+        ref: lua
         fetch-depth: 0
 
     - name: Initialization environment
