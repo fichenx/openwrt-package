@@ -2,6 +2,8 @@ name: Sync packages for js
 
 on:
   push:
+    branches:
+      - js
     paths:
       - '.github/workflows/js_wall.yml'
       - '.github/diy/js.sh'
@@ -32,6 +34,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@main
       with:
+        ref: js
         fetch-depth: 0
 
     - name: Initialization environment
