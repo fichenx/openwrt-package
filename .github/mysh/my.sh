@@ -40,7 +40,7 @@ git clone -b master https://github.com/tty228/luci-app-wechatpush luci-app-wecha
 
 #kenzok8/wall(将kenzok8自建常用的内核更改为breakings/OpenWrt/blob/main/diy-part2.sh中的源，只添加breakings中有的源)
 #git_sparse_clone main https://github.com/xiaorouji/openwrt-passwall-packages pdnsd-alt sing-box ssocks trojan-go trojan-plus geoview
-
+git_sparse_clone main https://github.com/xiaorouji/openwrt-passwall-packages sing-box
 #git_sparse_clone master https://github.com/fw876/helloworld naiveproxy dns2tcp lua-neturl redsocks2 shadowsocks-libev shadowsocksr-libev v2ray-geodata chinadns-ng dns2socks hysteria ipt2socks microsocks shadowsocks-rust simple-obfs tcping trojan v2ray-core v2ray-plugin
 
 #rm -rf brook dockerd gost smartdns xray-core xray-plugin
