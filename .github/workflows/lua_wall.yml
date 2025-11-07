@@ -53,7 +53,7 @@ jobs:
         cd ${{matrix.target}}
         git rm -r --cache * >/dev/null 2>&1 &
         rm -rf `find ./* -maxdepth 0 -type d ! -name "diy" ! -name "mysh"` >/dev/null 2>&1
-        rm -rf .github/diy
+        rm -rf $GITHUB_WORKSPACE/.github/diy .github/diy 
         #git clone --depth 1 --filter=blob:none --no-checkout https://github.com/kenzok8/small-package && cd small-package && git checkout main -- .github/diy && cd .. && mv -n small-package/.github/diy .github/diy ; rm -rf small-package
         git clone -b main --depth 1 --filter=blob:none --sparse https://github.com/kenzok8/small-package small-package && cd small-package && git sparse-checkout init --cone && git sparse-checkout set .github/diy && cd .. && mv -n small-package/.github/diy $GITHUB_WORKSPACE/.github/diy ; rm -rf small-package
         cd $GITHUB_WORKSPACE
