@@ -50,9 +50,9 @@ jobs:
         rm -rf .github/diy
         #git clone --depth 1 --filter=blob:none --no-checkout https://github.com/kenzok8/small-package && cd small-package && git checkout main -- .github/diy && cd .. && mv -n small-package/.github/diy .github/diy ; rm -rf small-package
         git clone -b main --depth 1 --filter=blob:none --sparse https://github.com/kenzok8/small-package small-package && cd small-package && git sparse-checkout init --cone && git sparse-checkout set .github/diy && cd .. && mv -n small-package/.github/diy $GITHUB_WORKSPACE/.github/diy ; rm -rf small-package
-        chmod +x .github/diy/${{matrix.target}}.sh
-        chmod +x .github/mysh/edit_main.sh
-        chmod +x .github/mysh/my.sh
+        chmod +x $GITHUB_WORKSPACE/.github/diy/${{matrix.target}}.sh
+        chmod +x $GITHUB_WORKSPACE/.github/mysh/edit_main.sh
+        chmod +x $GITHUB_WORKSPACE/.github/mysh/my.sh
         $GITHUB_WORKSPACE/.github/mysh/edit_main.sh
         $GITHUB_WORKSPACE/.github/diy/${{matrix.target}}.sh
         $GITHUB_WORKSPACE/.github/mysh/my.sh
