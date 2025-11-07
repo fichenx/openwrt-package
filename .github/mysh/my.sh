@@ -147,6 +147,9 @@ git clone --depth 1 https://github.com/sirpdboy/luci-theme-kucat -b 18.06 --dept
 #####删除kenzok8/small-package中的js版luci-app，无替换版本
 rm -rf luci-app-homeproxy
 
+#####shadowsocks-libev (ss-local ss-redir ss-tunnel ss-server)#####
+git_sparse_clone master https://github.com/fw876/helloworld shadowsocks-libev
+
 
 ############暂时替换原kenzok8/small-package/.github/diy/main.sh中无法使用的svn命令############
 git_sparse_clone master https://github.com/immortalwrt/luci applications/luci-app-homeproxy
@@ -160,7 +163,7 @@ git_sparse_clone master https://github.com/QiuSimons/OpenWrt-Add luci-app-irqbal
 #git_sparse_clone master https://github.com/xiaoxifu64/immortalwrt package/rooter/ext-rooter-basic
 git_sparse_clone openwrt-22.03 https://github.com/openwrt/luci applications/luci-app-wireguard
 git_sparse_clone main https://github.com/lucikap/Brukamen luci-app-ua2f
-git_sparse_clone master https://github.com/openwrt/packages net/shadowsocks-libev
+#git_sparse_clone master https://github.com/openwrt/packages net/shadowsocks-libev
 git_sparse_clone main https://github.com/kenzok8/jell vsftpd-alt luci-app-bridge
 ############暂时替换原kenzok8/small-package/.github/diy/main.sh中无法使用的svn命令############
 
