@@ -9,9 +9,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://gn.googlesource.com/gn.git
-PKG_SOURCE_DATE:=2025-09-21
-PKG_SOURCE_VERSION:=81b24e01531ecf0eff12ec9359a555ec3944ec4e
-PKG_MIRROR_HASH:=cc2e2075d87bd6a656940715230ab5173241427c2a1250171d0a4d6916034e05
+PKG_SOURCE_DATE:=2025-10-26
+PKG_SOURCE_VERSION:=092f4f0d612e5982728c8b872c2e69cf3d04b21f
+PKG_MIRROR_HASH:=e7d1de40a1e729645686c5a1fc74d7e457b2016b82b68633d3e01194b3b61786
 
 PKG_LICENSE:=BSD 3-Clause
 PKG_LICENSE_FILES:=LICENSE
@@ -38,7 +38,8 @@ endef
 
 define Host/Configure
 	$(PYTHON) $(HOST_BUILD_DIR)/build/gen.py \
-		--no-last-commit-position
+		--no-last-commit-position \
+		--allow-warnings
 endef
 
 define Host/Compile

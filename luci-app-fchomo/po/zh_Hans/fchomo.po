@@ -1649,8 +1649,8 @@ msgid "Name of the Proxy group to download rule set."
 msgstr "用于下载规则集订阅的代理组名称。"
 
 #: htdocs/luci-static/resources/view/fchomo/node.js:328
-msgid "Native"
-msgstr "原生"
+msgid "Native UDP"
+msgstr "原生 UDP"
 
 #: htdocs/luci-static/resources/fchomo.js:325
 msgid "Native appearance"
@@ -1884,6 +1884,10 @@ msgstr "端口"
 msgid "Port %s alrealy exists!"
 msgstr "端口 %s 已存在！"
 
+#: htdocs/luci-static/resources/view/fchomo/node.js:342
+msgid "Port range"
+msgstr "端口范围"
+
 #: htdocs/luci-static/resources/view/fchomo/global.js:696
 msgid "Ports"
 msgstr "端口"
@@ -2061,6 +2065,10 @@ msgstr "REALITY 标识符"
 msgid "RTT"
 msgstr ""
 
+#: htdocs/luci-static/resources/fchomo.js:319
+msgid "Random"
+msgstr "随机"
+
 #: htdocs/luci-static/resources/view/fchomo/global.js:650
 msgid "Random will be used if empty."
 msgstr "留空将使用随机令牌。"
@@ -2202,6 +2210,10 @@ msgstr "路由 GFW 流量"
 msgid "Routing mark"
 msgstr "路由标记"
 
+#: htdocs/luci-static/resources/view/fchomo/global.js:758
+msgid "Routing mark (Fwmark)"
+msgstr "路由标记 (Fwmark)"
+
 #: htdocs/luci-static/resources/view/fchomo/global.js:840
 msgid "Routing mode"
 msgstr "路由模式"
@@ -2258,7 +2270,11 @@ msgstr ""
 msgid "Running"
 msgstr "正在运行"
 
-#: htdocs/luci-static/resources/fchomo.js:125
+#: htdocs/luci-static/resources/fchomo.js:206
+msgid "SMTP ports"
+msgstr "SMTP 端口"
+
+#: htdocs/luci-static/resources/fchomo.js:127
 msgid "SOCKS"
 msgstr ""
 
@@ -2621,8 +2637,8 @@ msgid "To enable, you need to install <code>dnsmasq-full</code>."
 msgstr "要启用，您需要安装 <code>dnsmasq-full</code>。"
 
 #: htdocs/luci-static/resources/view/fchomo/global.js:765
-msgid "Tproxy Fwmark"
-msgstr "Tproxy 标记"
+msgid "Tproxy Fwmark/fwmask"
+msgstr "Tproxy Fwmark/fwmask"
 
 #: htdocs/luci-static/resources/view/fchomo/global.js:465
 msgid "Tproxy port"
@@ -2654,8 +2670,8 @@ msgid "Trojan"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/fchomo/global.js:770
-msgid "Tun Fwmark"
-msgstr "Tun 标记"
+msgid "Tun Fwmark/fwmask"
+msgstr "Tun Fwmark/fwmask"
 
 #: htdocs/luci-static/resources/view/fchomo/global.js:482
 msgid "Tun TCP/UDP"
@@ -3232,9 +3248,6 @@ msgstr ""
 #: htdocs/luci-static/resources/fchomo.js:1064
 msgid "🡇"
 msgstr ""
-
-#~ msgid "Port range"
-#~ msgstr "端口范围"
 
 #~ msgid "Default"
 #~ msgstr "默认"

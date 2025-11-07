@@ -2,12 +2,12 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=1.0.0-20250406
+PKG_VERSION:=1.0.1-20251011
 PKG_RELEASE:=
 
 LUCI_TITLE:=LuCI support for UptimeKuma
 LUCI_PKGARCH:=all
-LUCI_DEPENDS:=+lsblk +zoneinfo-asia +docker +dockerd +dockerd +luci-lib-taskd +luci-lib-docker
+LUCI_DEPENDS:=+lsblk +zoneinfo-asia +docker +dockerd +luci-lib-taskd +luci-lib-docker
 
 define Package/luci-app-uptimekuma/conffiles
 /etc/config/uptimekuma

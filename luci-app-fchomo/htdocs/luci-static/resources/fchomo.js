@@ -22,6 +22,8 @@ const sharktaikogif = function() {
 
 const pr7558_merged = form.DynamicList.prototype.renderWidget.toString().match('this\.allowduplicates');
 
+const HM_DIR = "/etc/fchomo";
+
 const monospacefonts = [
 	'"Cascadia Code"',
 	'"Cascadia Mono"',
@@ -199,8 +201,9 @@ const proxy_group_type = [
 
 const routing_port_type = [
 	['all', _('All ports')],
-	['common_tcpport', _('Common ports (bypass P2P traffic)'), uci.get('fchomo', 'config', 'common_tcpport') || '20-21,22,53,80,110,143,443,465,853,873,993,995,5222,8080,8443,9418'],
+	['common_tcpport', _('Common ports (bypass P2P traffic)'), uci.get('fchomo', 'config', 'common_tcpport') || '20-21,22,53,80,110,143,443,853,873,993,995,5222,8080,8443,9418'],
 	['common_udpport', _('Common ports (bypass P2P traffic)'), uci.get('fchomo', 'config', 'common_udpport') || '20-21,22,53,80,110,143,443,853,993,995,8080,8443,9418'],
+	['smtp_tcpport', _('SMTP ports'), uci.get('fchomo', 'config', 'smtp_tcpport') || '465,587'],
 	['stun_port', _('STUN ports'), uci.get('fchomo', 'config', 'stun_port') || '3478,19302'],
 	['turn_port', _('TURN ports'), uci.get('fchomo', 'config', 'turn_port') || '5349'],
 	['google_fcm_port', _('Google FCM ports'), uci.get('fchomo', 'config', 'google_fcm_port') || '443,5228-5230'],
@@ -314,7 +317,7 @@ const tls_client_fingerprints = [
 	['edge'],
 	['360'],
 	['qq'],
-	['random']
+	['random', _('Random')]
 ];
 
 const vless_encryption = {
@@ -855,6 +858,15 @@ function removeBlankAttrs(res) {
 		return obj;
 	}
 	return res;
+}
+
+function toUciname(str) {
+	if (isEmpty(str))
+		return null;
+
+	const unuciname = new RegExp(/[^a-zA-Z0-9_]+/, "g");
+
+	return str.replace(/[\s\.-]/g, '_').replace(unuciname, '');
 }
 
 function getFeatures() {
@@ -1509,6 +1521,7 @@ return baseclass.extend({
 	sharkaudio,
 	sharktaikogif,
 	pr7558_merged,
+	HM_DIR,
 	monospacefonts,
 	checkurls,
 	stunserver,
@@ -1560,6 +1573,7 @@ return baseclass.extend({
 	yaml2json,
 	isEmpty,
 	removeBlankAttrs,
+	toUciname,
 	getFeatures,
 	getServiceStatus,
 	getClashAPI,

@@ -1620,7 +1620,7 @@ msgid "Name of the Proxy group to download rule set."
 msgstr ""
 
 #: htdocs/luci-static/resources/view/fchomo/node.js:328
-msgid "Native"
+msgid "Native UDP"
 msgstr ""
 
 #: htdocs/luci-static/resources/fchomo.js:325
@@ -1852,6 +1852,10 @@ msgstr ""
 msgid "Port %s alrealy exists!"
 msgstr ""
 
+#: htdocs/luci-static/resources/view/fchomo/node.js:342
+msgid "Port range"
+msgstr ""
+
 #: htdocs/luci-static/resources/view/fchomo/global.js:696
 msgid "Ports"
 msgstr ""
@@ -2029,6 +2033,10 @@ msgstr ""
 msgid "RTT"
 msgstr ""
 
+#: htdocs/luci-static/resources/fchomo.js:319
+msgid "Random"
+msgstr ""
+
 #: htdocs/luci-static/resources/view/fchomo/global.js:650
 msgid "Random will be used if empty."
 msgstr ""
@@ -2170,6 +2178,10 @@ msgstr ""
 msgid "Routing mark"
 msgstr ""
 
+#: htdocs/luci-static/resources/view/fchomo/global.js:758
+msgid "Routing mark (Fwmark)"
+msgstr ""
+
 #: htdocs/luci-static/resources/view/fchomo/global.js:840
 msgid "Routing mode"
 msgstr ""
@@ -2226,7 +2238,11 @@ msgstr ""
 msgid "Running"
 msgstr ""
 
-#: htdocs/luci-static/resources/fchomo.js:125
+#: htdocs/luci-static/resources/fchomo.js:206
+msgid "SMTP ports"
+msgstr ""
+
+#: htdocs/luci-static/resources/fchomo.js:127
 msgid "SOCKS"
 msgstr ""
 
@@ -2583,7 +2599,7 @@ msgid "To enable, you need to install <code>dnsmasq-full</code>."
 msgstr ""
 
 #: htdocs/luci-static/resources/view/fchomo/global.js:765
-msgid "Tproxy Fwmark"
+msgid "Tproxy Fwmark/fwmask"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/fchomo/global.js:465
@@ -2616,7 +2632,7 @@ msgid "Trojan"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/fchomo/global.js:770
-msgid "Tun Fwmark"
+msgid "Tun Fwmark/fwmask"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/fchomo/global.js:482

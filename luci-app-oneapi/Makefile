@@ -7,7 +7,7 @@ PKG_RELEASE:=
 
 LUCI_TITLE:=LuCI support for OneAPI
 LUCI_PKGARCH:=all
-LUCI_DEPENDS:=+lsblk +zoneinfo-asia +docker +dockerd +dockerd +luci-lib-taskd +luci-lib-docker
+LUCI_DEPENDS:=+lsblk +zoneinfo-asia +docker +dockerd +luci-lib-taskd +luci-lib-docker
 
 define Package/luci-app-oneapi/conffiles
 /etc/config/oneapi
