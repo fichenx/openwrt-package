@@ -49,12 +49,12 @@ jobs:
         rm -rf `find ./* -maxdepth 0 -type d ! -name "diy" ! -name "mysh"` >/dev/null 2>&1
         rm -rf $GITHUB_WORKSPACE/.github/diy .github/diy
         #git clone --depth 1 --filter=blob:none --no-checkout https://github.com/kenzok8/small-package && cd small-package && git checkout main -- .github/diy && cd .. && mv -n small-package/.github/diy .github/diy ; rm -rf small-package
-        git clone -b main --depth 1 --filter=blob:none --sparse https://github.com/kenzok8/small-package small-package && cd small-package && git sparse-checkout init --cone && git sparse-checkout set .github/diy && cd .. && mv -n small-package/.github/diy $GITHUB_WORKSPACE/.github/diy ; rm -rf small-package
-        cd $GITHUB_WORKSPACE
+        git clone -b main --depth 1 --filter=blob:none --sparse https://github.com/kenzok8/small-package small-package && cd small-package && git sparse-checkout init --cone && git sparse-checkout set .github/diy && cd .. && mv -n small-package/.github/diy .github/diy ; rm -rf small-package
+        cp -a .github/diy $GITHUB_WORKSPACE/.github/diy
         chmod +x $GITHUB_WORKSPACE/.github/diy/${{matrix.target}}.sh
-        chmod +x $GITHUB_WORKSPACE/.github/mysh/edit_main.sh
+        chmod +x $GITHUB_WORKSPACE/.github/mysh/edit_${{matrix.target}}.sh
         chmod +x $GITHUB_WORKSPACE/.github/mysh/my.sh
-        $GITHUB_WORKSPACE/.github/mysh/edit_main.sh
+        $GITHUB_WORKSPACE/.github/mysh/edit_${{matrix.target}}.sh
         $GITHUB_WORKSPACE/.github/diy/${{matrix.target}}.sh
         $GITHUB_WORKSPACE/.github/mysh/my.sh
         bash /$GITHUB_WORKSPACE/.github/diy/convert_translation.sh
