@@ -161,7 +161,7 @@ git_sparse_clone master https://github.com/QiuSimons/OpenWrt-Add luci-app-irqbal
 #git_sparse_clone master https://github.com/xiaoxifu64/immortalwrt package/rooter/ext-rooter-basic
 git_sparse_clone openwrt-22.03 https://github.com/openwrt/luci applications/luci-app-wireguard
 git_sparse_clone main https://github.com/lucikap/Brukamen luci-app-ua2f
-git_sparse_clone master https://github.com/openwrt/packages net/shadowsocks-libev
+#git_sparse_clone master https://github.com/openwrt/packages net/shadowsocks-libev
 git_sparse_clone main https://github.com/kenzok8/jell vsftpd-alt luci-app-bridge
 ############暂时替换原kenzok8/small-package/.github/diy/main.sh中无法使用的svn命令############
 
