@@ -2,12 +2,12 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=1.0.3-20241215
+PKG_VERSION:=1.1.0-20251012
 PKG_RELEASE:=
 
 LUCI_TITLE:=LuCI support for Ubuntu2
 LUCI_PKGARCH:=all
-LUCI_DEPENDS:=+lsblk +docker +dockerd +dockerd +luci-lib-taskd
+LUCI_DEPENDS:=+lsblk +docker +dockerd +luci-lib-taskd
 
 define Package/luci-app-ubuntu2/conffiles
 /etc/config/ubuntu2
