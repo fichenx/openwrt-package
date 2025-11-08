@@ -7,7 +7,7 @@ local UTIL = require "luci.util"
 local fs = require "luci.openclash"
 local uci = require "luci.model.uci".cursor()
 local json = require "luci.jsonc"
-local datatypes = require "luci.cbi.datatypes"
+local datatype = require "luci.cbi.datatypes"
 
 -- 优化 CBI UI（新版 LuCI 专用）
 local function optimize_cbi_ui()
@@ -269,8 +269,18 @@ o.default = "tcp"
 o.rmempty = false
 
 o = s2:option(Value, "dscp", translate("DSCP"))
-o.datatype = "integer"
-o.rmempty = false
+o.datatype = "range(0,63)"
+o.rmempty = true
+function o.validate(self, value)
+    if value == "" or value == nil then
+        return value
+    end
+    local num = tonumber(value)
+    if not num or num < 0 or num > 63 then
+        return nil, "DSCP must be between 0 and 63"
+    end
+    return value
+end
 
 o = s2:option(ListValue, "target", translate("Target"))
 o:value("return", translate("RETURN"))
@@ -290,8 +300,8 @@ local function ip_compare(a, b)
         return 0
     end
     
-    local a_is_ipv4 = datatypes.ip4addr(a.dest)
-    local b_is_ipv4 = datatypes.ip4addr(b.dest)
+    local a_is_ipv4 = datatype.ip4addr(a.dest)
+    local b_is_ipv4 = datatype.ip4addr(b.dest)
     
     if a_is_ipv4 and not b_is_ipv4 then
         return true
@@ -339,8 +349,8 @@ end
 for _, mac in ipairs(mac_order) do
     local ips = mac_ip_map[mac]
     table.sort(ips, function(a, b)
-        local a_is_ipv4 = datatypes.ip4addr(a)
-        local b_is_ipv4 = datatypes.ip4addr(b)
+        local a_is_ipv4 = datatype.ip4addr(a)
+        local b_is_ipv4 = datatype.ip4addr(b)
         if a_is_ipv4 and not b_is_ipv4 then
             return true
         elseif not a_is_ipv4 and b_is_ipv4 then
@@ -1182,6 +1192,25 @@ o = s:taboption("ipv6", Flag, "ipv6_dns", translate("IPv6 DNS Resolve"))
 o.description = translate("Enable to Resolve IPv6 DNS Requests")
 o.default = 0
 
+if op_mode == "fake-ip" then
+o = s:taboption("ipv6", Value, "fakeip_range6", translate("Fake-IP Range").." (IPv6 Cidr)")
+o.description = translate("Set Fake-IP Range").. " (IPv6 Cidr)"
+o:depends("ipv6_dns", "1")
+o:value("0", translate("Disable"))
+o:value("fdfe:dcba:9876::1/64")
+o.default = "0"
+o.placeholder = "fdfe:dcba:9876::1/64"
+function o.validate(self, value)
+	if value == "0" then
+		return "0"
+	end
+	if datatype.cidr6(value) then
+		return value
+	end
+	return "fdfe:dcba:9876::1/64"
+end
+end
+
 o = s:taboption("ipv6", ListValue, "china_ip6_route", translate("China IPv6 Route"))
 o.description = translate("Bypass Specified Regions Network Flows, Improve Performance, If Inaccessibility on Bypass Gateway, Try to Enable Bypass Gateway Compatible Option")
 o.default = 0
@@ -1189,6 +1218,7 @@ o:value("0", translate("Disable"))
 o:value("1", translate("Bypass Mainland China"))
 o:value("2", translate("Bypass Overseas"))
 o:depends("ipv6_enable", "1")
+
 
 o = s:taboption("ipv6", Value, "local_network6_pass", translate("Local IPv6 Network Bypassed List"))
 o.template = "cbi/tvalue"

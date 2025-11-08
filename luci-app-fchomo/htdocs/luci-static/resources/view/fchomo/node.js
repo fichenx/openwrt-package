@@ -5,7 +5,89 @@
 'require view';
 
 'require fchomo as hm';
+'require tools.prng as random';
 'require tools.widgets as widgets';
+
+document.querySelector('head').appendChild(E('link', {
+	'rel': 'stylesheet',
+	'type': 'text/css',
+	'href': L.resource('view/fchomo/node.css')
+}));
+
+const CBIBubblesValue = form.DummyValue.extend({
+	__name__: 'CBI.BubblesValue',
+
+	load(section_id) {
+		const uciconfig = this.config || this.section.configthis.config || this.map.config;
+		const type = uci.get(uciconfig, section_id, 'type');
+		const detour = uci.get(uciconfig, section_id, 'chain_tail_group') || uci.get(uciconfig, section_id, 'chain_tail');
+
+		switch (type) {
+			case 'node':
+				return '%s ⇒ %s'.format(
+					uci.get(uciconfig, section_id, 'chain_head'),
+					detour
+				);
+			case 'provider':
+				return '%s ⇒ %s'.format(
+					uci.get(uciconfig, section_id, 'chain_head_sub'),
+					detour
+				);
+			default:
+				return null;
+		}
+	},
+
+	textvalue(section_id) {
+		const cval = this.cfgvalue(section_id);
+		if (!cval)
+			return null;
+
+		const chain = cval.split('⇒').map(t => t.trim());
+		//const container_id = this.cbid(section_id) + '.bubbles';
+
+		let curWrapper = null;
+		for (let i = 0; i < chain.length; i++) {
+			const text = chain[i];
+
+			const labelEl = E('span', {
+				class: 'bubble-label'
+			}, [ text ]);
+
+			const bubbleEl = E('div', {
+				class: 'bubble',
+				//id: container_id + `.${hm.toUciname(text)}`,
+				style: '--bubble-color:%s; background-color:var(--bubble-color)'
+					.format(random.derive_color(text))
+			}, [ labelEl ]);
+
+			if (curWrapper)
+				bubbleEl.insertBefore(curWrapper, bubbleEl.firstChild);
+
+			curWrapper = bubbleEl;
+		}
+
+		return E('div', {
+			class: 'nested-bubbles-container',
+			//id: container_id
+		}, [ curWrapper ]);
+	},
+
+	hexToRgbArray(hex) {
+		// Remove the '#' if it exists
+		const shorthandRegex = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i;
+		const result = shorthandRegex.exec(hex);
+
+		if (result)
+			return [
+				parseInt(result[1], 16),
+				parseInt(result[2], 16),
+				parseInt(result[3], 16)
+			];
+		else
+			return null;
+	}
+});
 
 function parseProviderYaml(field, name, cfg) {
 	if (!cfg.type)
@@ -257,8 +339,8 @@ return view.extend({
 		so.modalonly = true;
 
 		/* Mieru fields */
-		so = ss.taboption('field_general', form.DynamicList, 'mieru_ports', _('Ports pool'));
-		so.datatype = 'or(port, portrange)';
+		so = ss.taboption('field_general', form.Value, 'mieru_port_range', _('Port range'));
+		so.datatype = 'portrange';
 		so.depends('type', 'mieru');
 		so.modalonly = true;
 
@@ -325,7 +407,7 @@ return view.extend({
 		so = ss.taboption('field_general', form.ListValue, 'tuic_udp_relay_mode', _('UDP relay mode'),
 			_('UDP packet relay mode.'));
 		so.default = 'native';
-		so.value('native', _('Native'));
+		so.value('native', _('Native UDP'));
 		so.value('quic', _('QUIC'));
 		so.depends({type: 'tuic', tuic_udp_over_stream: '0'});
 		so.modalonly = true;
@@ -1182,7 +1264,7 @@ return view.extend({
 
 			switch (option) {
 				case 'file':
-					return uci.get(data[0], section_id, '.name');
+					return `${hm.HM_DIR}/${this.section.sectiontype}/` + uci.get(data[0], section_id, '.name');
 				case 'http':
 					return uci.get(data[0], section_id, 'url');
 				case 'inline':
@@ -1449,26 +1531,7 @@ return view.extend({
 		so.default = 'node';
 		so.textvalue = hm.textvalue2Value;
 
-		so = ss.option(form.DummyValue, '_value', _('Value'));
-		so.load = function(section_id) {
-			const type = uci.get(data[0], section_id, 'type');
-			const detour = uci.get(data[0], section_id, 'chain_tail_group') || uci.get(data[0], section_id, 'chain_tail');
-
-			switch (type) {
-				case 'node':
-					return '%s » %s'.format(
-						uci.get(data[0], section_id, 'chain_head'),
-						detour
-					);
-				case 'provider':
-					return '%s » %s'.format(
-						uci.get(data[0], section_id, 'chain_head_sub'),
-						detour
-					);
-				default:
-					return null;
-			}
-		}
+		so = ss.option(CBIBubblesValue, '_value', _('Value'));
 		so.modalonly = false;
 
 		so = ss.option(form.ListValue, 'chain_head_sub', _('Chain head') + _(' (Destination)'));
