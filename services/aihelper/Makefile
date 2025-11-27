@@ -39,6 +39,13 @@ define Package/$(PKG_NAME)/conffiles
 endef
 
 define Package/$(PKG_NAME)/postinst
+#!/bin/sh
+if [ -z "$${IPKG_INSTROOT}" ]; then
+	if [ -f /etc/uci-defaults/09-aihelper ]; then
+		chmod 755 /etc/uci-defaults/09-aihelper
+		/etc/uci-defaults/09-aihelper && rm -f /etc/uci-defaults/09-aihelper
+	fi
+fi
 endef
 
 define Build/Configure
