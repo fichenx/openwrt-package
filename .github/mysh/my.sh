@@ -197,6 +197,7 @@ sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-lib-ipkg/Makefile
 #更新dockerd(修改前使用的源为：https://github.com/kenzok8/wall)
 #sed -i 's|\(PKG_VERSION:=\)[0-9]\+\.[0-9]\+\.[0-9]\+|\128.3.0|g' dockerd/Makefile
 #sed -i 's|PKG_HASH:=.*|PKG_HASH:=99fe19d2a15d3cc56b9bd5e782664a85c2a7027566a4acc5c07ec8d42666362b|g' dockerd/Makefile
+sed -i 's|PKG_GIT_REF:=v|PKG_GIT_REF:=docker-v|g' dockerd/Makefile
 #更新docker(修改前使用的源为：https://github.com/kenzok8/wall)
 #sed -i 's|\(PKG_VERSION:=\)[0-9]\+\.[0-9]\+\.[0-9]\+|\128.3.0|g' docker/Makefile
 #sed -i 's|PKG_HASH:=.*|PKG_HASH:=0ac18927138cd2582e02277d365174a118b962f10084a6bef500a58de705e094|g' docker/Makefile
