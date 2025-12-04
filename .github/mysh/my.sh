@@ -188,8 +188,8 @@ sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-app-wireguard/Makef
 sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-lib-ipkg/Makefile
 
 #更新dockerd(修改前使用的源为：https://github.com/kenzok8/wall)
-#sed -i 's|\(PKG_VERSION:=\)[0-9]\+\.[0-9]\+\.[0-9]\+|\128.3.0|g' dockerd/Makefile
-sed -i 's|PKG_HASH:=.*|PKG_HASH:=65221f1c70feb1bd1562bb1017b586e4528be877656dc16f5be5659fc9b7e522|g' dockerd/Makefile
+sed -i 's|\(PKG_VERSION:=\)[0-9]\+\.[0-9]\+\.[0-9]\+|\129.1.2|g' dockerd/Makefile
+sed -i 's|PKG_HASH:=.*|PKG_HASH:=f11949f3d8dcbcbd6d5de0b345b5ec8dbdd74572c6ce614c7b6e7551829d8035|g' dockerd/Makefile
 sed -i 's|PKG_GIT_REF:=v|PKG_GIT_REF:=docker-v|g' dockerd/Makefile
 #更新docker(修改前使用的源为：https://github.com/kenzok8/wall)
 #sed -i 's|\(PKG_VERSION:=\)[0-9]\+\.[0-9]\+\.[0-9]\+|\128.3.0|g' docker/Makefile
