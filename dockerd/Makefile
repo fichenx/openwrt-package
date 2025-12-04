@@ -10,7 +10,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_GIT_URL:=github.com/moby/moby
 PKG_GIT_REF:=docker-v$(PKG_VERSION)
 PKG_SOURCE_URL:=https://codeload.$(PKG_GIT_URL)/tar.gz/$(PKG_GIT_REF)?
-PKG_HASH:=65221f1c70feb1bd1562bb1017b586e4528be877656dc16f5be5659fc9b7e522
+PKG_HASH:=f11949f3d8dcbcbd6d5de0b345b5ec8dbdd74572c6ce614c7b6e7551829d8035
 PKG_GIT_SHORT_COMMIT:=$(shell $(CURDIR)/git-short-commit.sh '$(PKG_GIT_URL)' '$(PKG_GIT_REF)' '$(TMP_DIR)/git-short-commit/$(PKG_NAME)-$(PKG_VERSION)')
 
 PKG_MAINTAINER:=Gerard Ryan <G.M0N3Y.2503@gmail.com>
