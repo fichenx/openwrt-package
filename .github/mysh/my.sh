@@ -193,22 +193,22 @@ sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-app-wireguard/Makef
 sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-lib-ipkg/Makefile
 
 ##docker及其依赖
-#dockerd(修改前使用的源为：https://github.com/kenzok8/wall)
-sed -i 's|\(PKG_VERSION:=\)[0-9]\+\.[0-9]\+\.[0-9]\+|\128.5.2|g' dockerd/Makefile
-sed -i 's|PKG_HASH:=.*|PKG_HASH:=0e450c03c536a1304ba8fd26ca4c4ff96fac62182fd042fec90ffdf4a0969d40|g' dockerd/Makefile
+#dockerd(修改前使用的源为：https://github.com/kenzok8/wall),插件地址：https://github.com/moby/moby
+sed -i 's|\(PKG_VERSION:=\)[0-9]\+\.[0-9]\+\.[0-9]\+|\128.5.1|g' dockerd/Makefile
+sed -i 's|PKG_HASH:=.*|PKG_HASH:=c17f48bbea209f00e62915dfdbb90e471d296202e466335e43fc9d5982ae3a6a|g' dockerd/Makefile
 #sed -i 's|PKG_GIT_REF:=v|PKG_GIT_REF:=docker-v|g' dockerd/Makefile
-#docker(修改前使用的源为：https://github.com/kenzok8/wall)
-sed -i 's|\(PKG_VERSION:=\)[0-9]\+\.[0-9]\+\.[0-9]\+|\128.5.2|g' docker/Makefile
-sed -i 's|PKG_HASH:=.*|PKG_HASH:=5864ccdfceef3a9e8ddb29b4a555d5b82a551b5258067aac164b6156c6cfdc08|g' docker/Makefile
-#containerd
+#docker(修改前使用的源为：https://github.com/kenzok8/wall),插件地址：https://github.com/docker/cli
+sed -i 's|\(PKG_VERSION:=\)[0-9]\+\.[0-9]\+\.[0-9]\+|\128.5.1|g' docker/Makefile
+sed -i 's|PKG_HASH:=.*|PKG_HASH:=3872f03dd3d1e2769ecad57c8744743e72ad619f72f1897f4886fd44746337cd|g' docker/Makefile
+#containerd，插件地址：https://github.com/containerd/containerd
 git_sparse_clone master https://github.com/coolsnowwolf/packages utils/containerd
-sed -i 's/PKG_VERSION:=.*/PKG_VERSION:=1.7.29/g' containerd/Makefile
-sed -i 's/PKG_HASH:=.*/PKG_HASH:=e9c467a96b2d7f5b5348c090da75d80ed1889ff6d0f649f87efdf5c311a02500/g' containerd/Makefile
+sed -i 's/PKG_VERSION:=.*/PKG_VERSION:=1.7.28/g' containerd/Makefile
+sed -i 's/PKG_HASH:=.*/PKG_HASH:=546aa9fdb04a0cd40a5cbc5c931c269d42522d473abd7234b98d98e63316ed9b/g' containerd/Makefile
 sed -i 's/containerd-shim,containerd-shim-runc-v1,//g' containerd/Makefile
-#runc
+#runc，插件地址：https://github.com/opencontainers/runc
 git_sparse_clone master https://github.com/coolsnowwolf/packages utils/runc
-sed -i 's/PKG_VERSION:=.*/PKG_VERSION:=1.3.3/g' runc/Makefile
-sed -i 's/PKG_HASH:=.*/PKG_HASH:=3da010af5c2c1c3d12d460255e4a7dc049c223ebc629c80fbbe4c10720997ffe/g' runc/Makefile
+sed -i 's/PKG_VERSION:=.*/PKG_VERSION:=1.3.0/g' runc/Makefile
+sed -i 's/PKG_HASH:=.*/PKG_HASH:=3262492ce42bea0919ee1a2d000b6f303fd14877295bc38d094876b55fdd448b/g' runc/Makefile
 
 
 ######################################
