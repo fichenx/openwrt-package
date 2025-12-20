@@ -194,11 +194,11 @@ sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-lib-ipkg/Makefile
 
 ##docker及其依赖
 #dockerd(修改前使用的源为：https://github.com/kenzok8/wall),插件地址：https://github.com/moby/moby
-sed -i 's|\(PKG_VERSION:=\)[0-9]\+\.[0-9]\+\.[0-9]\+|\128.5.1|g' dockerd/Makefile
+sed -i 's|\(PKG_VERSION:=\)[0-9]\+\.[0-9]\+\.[0-9]\+.*|\128.5.1|g' dockerd/Makefile
 sed -i 's|PKG_HASH:=.*|PKG_HASH:=c17f48bbea209f00e62915dfdbb90e471d296202e466335e43fc9d5982ae3a6a|g' dockerd/Makefile
 #sed -i 's|PKG_GIT_REF:=v|PKG_GIT_REF:=docker-v|g' dockerd/Makefile
 #docker(修改前使用的源为：https://github.com/kenzok8/wall),插件地址：https://github.com/docker/cli
-sed -i 's|\(PKG_VERSION:=\)[0-9]\+\.[0-9]\+\.[0-9]\+|\128.5.1|g' docker/Makefile
+sed -i 's|\(PKG_VERSION:=\)[0-9]\+\.[0-9]\+\.[0-9]\+.*|\128.5.1|g' dockerd/Makefile
 sed -i 's|PKG_HASH:=.*|PKG_HASH:=3872f03dd3d1e2769ecad57c8744743e72ad619f72f1897f4886fd44746337cd|g' docker/Makefile
 #containerd，插件地址：https://github.com/containerd/containerd
 git_sparse_clone master https://github.com/coolsnowwolf/packages utils/containerd
