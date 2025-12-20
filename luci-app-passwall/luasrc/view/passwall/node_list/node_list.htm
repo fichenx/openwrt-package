@@ -160,11 +160,6 @@ table td, .table .td {
 	background-color: rgba(131, 191, 255, 0.7) !important;
 	box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
-
-/* hide save button */
-.cbi-page-actions {
-	display: none !important;
-}
 </style>
 
 <% if api.is_js_luci() then -%>
@@ -220,8 +215,6 @@ table td, .table .td {
 	//<![CDATA[
 	let auto_detection_time = "<%=api.uci_get_type("global_other", "auto_detection_time", "0")%>"
 	let show_node_info = "<%=api.uci_get_type("global_other", "show_node_info", "0")%>"
-
-	var node_list = [];
 
 	var ajax = {
 		post: function(url, data, fn_success, timeout, fn_timeout) {

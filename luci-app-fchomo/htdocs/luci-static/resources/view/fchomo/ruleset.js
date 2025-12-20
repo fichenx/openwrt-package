@@ -6,29 +6,31 @@
 
 'require fchomo as hm';
 
-function parseRulesetYaml(field, name, cfg) {
-	if (!cfg.type)
-		return null;
+const parseRulesetYaml = hm.parseYaml.extend({
+	key_mapping(cfg) {
+		if (!cfg.type)
+			return null;
 
-	// key mapping
-	let config = hm.removeBlankAttrs({
-		id: cfg.hm_id,
-		label: cfg.hm_label,
-		type: cfg.type,
-		format: cfg.format,
-		behavior: cfg.behavior,
-		...(cfg.type === 'inline' ? {
-			payload: cfg.payload, // string: array
-		} : {
-			url: cfg.url,
-			size_limit: cfg["size-limit"],
-			interval: cfg.interval,
-			proxy: cfg.proxy ? hm.preset_outbound.full.map(([key, label]) => key).includes(cfg.proxy) ? cfg.proxy : this.calcID(hm.glossary["proxy_group"].field, cfg.proxy) : null,
-		})
-	});
+		// key mapping // 2025/06/21
+		let config = hm.removeBlankAttrs({
+			id: this.id,
+			label: this.label,
+			type: cfg.type,
+			format: cfg.format,
+			behavior: cfg.behavior,
+			...(cfg.type === 'inline' ? {
+				payload: cfg.payload, // string: array
+			} : {
+				url: cfg.url,
+				size_limit: cfg["size-limit"],
+				interval: cfg.interval,
+				proxy: cfg.proxy ? hm.preset_outbound.full.map(([key, label]) => key).includes(cfg.proxy) ? cfg.proxy : this.calcID(hm.glossary["proxy_group"].field, cfg.proxy) : null,
+			})
+		});
 
-	return config;
-}
+		return config;
+	}
+});
 
 function parseRulesetLink(section_type, uri) {
 	const filefmt = new RegExp(/^(text|yaml|mrs)$/);
@@ -168,11 +170,7 @@ return view.extend({
 							"      - '*.*.microsoft.com'\n" +
 							"      - 'books.itunes.apple.com'\n" +
 							'  ...'
-			o.parseYaml = function(field, name, cfg) {
-				let config = hm.HandleImport.prototype.parseYaml.call(this, field, name, cfg);
-
-				return config ? parseRulesetYaml.call(this, field, name, config) : null;
-			};
+			o.parseYaml = parseRulesetYaml;
 
 			return o.render();
 		}
@@ -325,12 +323,24 @@ return view.extend({
 				.format('https://wiki.metacubex.one/config/rule-providers/content/', _('Contents')));
 		o.placeholder = _('Content will not be verified, Please make sure you enter it correctly.');
 		o.load = function(section_id) {
-			return L.resolveDefault(hm.readFile(this.section.sectiontype, section_id), '');
+			const option = uci.get(data[0], section_id, 'type');
+
+			if (option === 'file')
+				return L.resolveDefault(hm.readFile(this.section.sectiontype, section_id), '');
 		}
-		o.write = L.bind(hm.writeFile, o, o.section.sectiontype);
-		o.remove = L.bind(hm.writeFile, o, o.section.sectiontype);
-		o.rmempty = false;
-		o.retain = true;
+		o.write = function(section_id, formvalue) {
+			const option = uci.get(data[0], section_id, 'type');
+
+			if (option === 'file')
+				return hm.writeFile.call(this, this.section.sectiontype, section_id, formvalue);
+		}
+		o.remove = function(section_id) {
+			const option = uci.get(data[0], section_id, 'type');
+			const cached_option = this.section.getOption('type').cfgvalue(section_id);
+
+			if (option === 'file' && cached_option === 'file')
+				return hm.writeFile.call(this, this.section.sectiontype, section_id);
+		}
 		o.depends({'type': 'file', 'format': /^(text|yaml)$/});
 		o.modalonly = true;
 

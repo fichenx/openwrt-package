@@ -89,56 +89,58 @@ const CBIBubblesValue = form.DummyValue.extend({
 	}
 });
 
-function parseProviderYaml(field, name, cfg) {
-	if (!cfg.type)
-		return null;
+const parseProviderYaml = hm.parseYaml.extend({
+	key_mapping(cfg) {
+		if (!cfg.type)
+			return null;
 
-	// key mapping
-	let config = hm.removeBlankAttrs({
-		id: cfg.hm_id,
-		label: cfg.hm_label,
-		type: cfg.type,
-		...(cfg.type === 'inline' ? {
-			//dialer_proxy: cfg["dialer-proxy"],
-			payload: cfg.payload, // string: array
-		} : {
-			url: cfg.url,
-			size_limit: cfg["size-limit"],
-			interval: cfg.interval,
-			proxy: cfg.proxy ? hm.preset_outbound.full.map(([key, label]) => key).includes(cfg.proxy) ? cfg.proxy : this.calcID(hm.glossary["proxy_group"].field, cfg.proxy) : null,
-			header: cfg.header ? JSON.stringify(cfg.header, null, 2) : null, // string: object
-			/* Health fields */
-			health_enable: hm.bool2str(hm.getValue(cfg, "health-check.enable")), // bool
-			health_url: hm.getValue(cfg, "health-check.url"),
-			health_interval: hm.getValue(cfg, "health-check.interval"),
-			health_timeout: hm.getValue(cfg, "health-check.timeout"),
-			health_lazy: hm.bool2str(hm.getValue(cfg, "health-check.lazy")), // bool
-			health_expected_status: hm.getValue(cfg, "health-check.expected-status"),
-			/* Override fields */
-			override_prefix: hm.getValue(cfg, "override.additional-prefix"),
-			override_suffix: hm.getValue(cfg, "override.additional-suffix"),
-			override_replace: (hm.getValue(cfg, "override.proxy-name") || []).map((obj) => JSON.stringify(obj)), // array.string: array.object
-			// Configuration Items
-			override_tfo: hm.bool2str(hm.getValue(cfg, "override.tfo")), // bool
-			override_mptcp: hm.bool2str(hm.getValue(cfg, "override.mptcp")), // bool
-			override_udp: hm.bool2str(hm.getValue(cfg, "override.udp")), // bool
-			override_uot: hm.bool2str(hm.getValue(cfg, "override.udp-over-tcp")), // bool
-			override_up: hm.getValue(cfg, "override.up"),
-			override_down: hm.getValue(cfg, "override.down"),
-			override_skip_cert_verify: hm.bool2str(hm.getValue(cfg, "override.skip-cert-verify")), // bool
-			//override_dialer_proxy: hm.getValue(cfg, "override.dialer-proxy"),
-			override_interface_name: hm.getValue(cfg, "override.interface-name"),
-			override_routing_mark: hm.getValue(cfg, "override.routing-mark"),
-			override_ip_version: hm.getValue(cfg, "override.ip-version"),
-			/* General fields */
-			filter: [cfg.filter], // array.string: string
-			exclude_filter: [cfg["exclude-filter"]], // array.string: string
-			exclude_type: [cfg["exclude-type"]] // array.string: string
-		})
-	});
+		// key mapping // 2025/07/11
+		let config = hm.removeBlankAttrs({
+			id: this.id,
+			label: this.label,
+			type: cfg.type,
+			...(cfg.type === 'inline' ? {
+				//dialer_proxy: cfg["dialer-proxy"],
+				payload: cfg.payload, // string: array
+			} : {
+				url: cfg.url,
+				size_limit: cfg["size-limit"],
+				interval: cfg.interval,
+				proxy: cfg.proxy ? hm.preset_outbound.full.map(([key, label]) => key).includes(cfg.proxy) ? cfg.proxy : this.calcID(hm.glossary["proxy_group"].field, cfg.proxy) : null,
+				header: cfg.header ? JSON.stringify(cfg.header, null, 2) : null, // string: object
+				/* Health fields */
+				health_enable: this.bool2str(this.jq(cfg, "health-check.enable")), // bool
+				health_url: this.jq(cfg, "health-check.url"),
+				health_interval: this.jq(cfg, "health-check.interval"),
+				health_timeout: this.jq(cfg, "health-check.timeout"),
+				health_lazy: this.bool2str(this.jq(cfg, "health-check.lazy")), // bool
+				health_expected_status: this.jq(cfg, "health-check.expected-status"),
+				/* Override fields */
+				override_prefix: this.jq(cfg, "override.additional-prefix"),
+				override_suffix: this.jq(cfg, "override.additional-suffix"),
+				override_replace: (this.jq(cfg, "override.proxy-name") || []).map((obj) => JSON.stringify(obj)), // array.string: array.object
+				// Configuration Items
+				override_tfo: this.bool2str(this.jq(cfg, "override.tfo")), // bool
+				override_mptcp: this.bool2str(this.jq(cfg, "override.mptcp")), // bool
+				override_udp: this.bool2str(this.jq(cfg, "override.udp")), // bool
+				override_uot: this.bool2str(this.jq(cfg, "override.udp-over-tcp")), // bool
+				override_up: this.jq(cfg, "override.up"),
+				override_down: this.jq(cfg, "override.down"),
+				override_skip_cert_verify: this.bool2str(this.jq(cfg, "override.skip-cert-verify")), // bool
+				//override_dialer_proxy: this.jq(cfg, "override.dialer-proxy"),
+				override_interface_name: this.jq(cfg, "override.interface-name"),
+				override_routing_mark: this.jq(cfg, "override.routing-mark"),
+				override_ip_version: this.jq(cfg, "override.ip-version"),
+				/* General fields */
+				filter: [cfg.filter], // array.string: string
+				exclude_filter: [cfg["exclude-filter"]], // array.string: string
+				exclude_type: [cfg["exclude-type"]] // array.string: string
+			})
+		});
 
-	return config;
-}
+		return config;
+	}
+});
 
 class VlessEncryptionClient {
 	// origin:
@@ -379,6 +381,14 @@ return view.extend({
 		hm.sudoku_cipher_methods.forEach((res) => {
 			so.value.apply(so, res);
 		})
+		so.validate = function(section_id, value) {
+			const pure_downlink = this.section.getUIElement(section_id, 'sudoku_enable_pure_downlink')?.node.querySelector('input').checked;
+
+			if (value === 'none' && pure_downlink === false)
+				return _('Expecting: %s').format(_('Chipher must be enabled if obfuscate downlink is disabled.'));
+
+			return true;
+		}
 		so.depends('type', 'sudoku');
 		so.modalonly = true;
 
@@ -386,6 +396,11 @@ return view.extend({
 		so.value('prefer_ascii', _('Obfuscated as ASCII data stream'));
 		so.value('prefer_entropy', _('Obfuscated as low-entropy data stream'));
 		so.depends('type', 'sudoku');
+		so.modalonly = true;
+
+		so = ss.taboption('field_general', form.DynamicList, 'sudoku_custom_tables', _('Custom byte layout'));
+		so.validate = hm.validateSudokuCustomTable;
+		so.depends('sudoku_table_type', 'prefer_entropy');
 		so.modalonly = true;
 
 		so = ss.taboption('field_general', form.Value, 'sudoku_padding_min', _('Minimum padding'));
@@ -403,6 +418,13 @@ return view.extend({
 		so.modalonly = true;
 
 		so = ss.taboption('field_general', form.Flag, 'sudoku_http_mask', _('HTTP mask'));
+		so.default = so.enabled;
+		so.depends('type', 'sudoku');
+		so.modalonly = true;
+
+		so = ss.taboption('field_general', form.Flag, 'sudoku_enable_pure_downlink', _('Enable obfuscate for downlink'),
+			_('When disabled, downlink ciphertext is split into 6-bit segments, reusing the original padding pool and obfuscate type to reduce downlink overhead.') + '</br>' +
+			_('Uplink keeps the Sudoku protocol, and downlink characteristics are consistent with uplink characteristics.'));
 		so.default = so.enabled;
 		so.depends('type', 'sudoku');
 		so.modalonly = true;
@@ -774,7 +796,7 @@ return view.extend({
 		so.depends('vless_encryption', '1');
 		so.modalonly = true;
 
-		so = ss.taboption('field_vless_encryption', !hm.pr7558_merged ? hm.DynamicList : form.DynamicList, 'vless_encryption_paddings', _('Paddings'), // @pr7558_merged
+		so = ss.taboption('field_vless_encryption', hm.less_25_12 ? hm.DynamicList : form.DynamicList, 'vless_encryption_paddings', _('Paddings'), // @less_25_12
 			_('The server and client can set different padding parameters.') + '</br>' +
 			_('In the order of one <code>Padding-Length</code> and one <code>Padding-Interval</code>, infinite concatenation.') + '</br>' +
 			_('The first padding must have a probability of 100% and at least 35 bytes.'));
@@ -1252,11 +1274,7 @@ return view.extend({
 							'      interval: 36000\n' +
 							'      url: https://cp.cloudflare.com/generate_204\n' +
 							'  ...'
-			o.parseYaml = function(field, name, cfg) {
-				let config = hm.HandleImport.prototype.parseYaml.call(this, field, name, cfg);
-
-				return config ? parseProviderYaml.call(this, field, name, config) : null;
-			};
+			o.parseYaml = parseProviderYaml;
 
 			return o.render();
 		}
@@ -1321,12 +1339,24 @@ return view.extend({
 				.format('https://wiki.metacubex.one/config/proxy-providers/content/', _('Contents')));
 		so.placeholder = _('Content will not be verified, Please make sure you enter it correctly.');
 		so.load = function(section_id) {
-			return L.resolveDefault(hm.readFile(this.section.sectiontype, section_id), '');
+			const option = uci.get(data[0], section_id, 'type');
+
+			if (option === 'file')
+				return L.resolveDefault(hm.readFile(this.section.sectiontype, section_id), '');
 		}
-		so.write = L.bind(hm.writeFile, so, so.section.sectiontype);
-		so.remove = L.bind(hm.writeFile, so, so.section.sectiontype);
-		so.rmempty = false;
-		so.retain = true;
+		so.write = function(section_id, formvalue) {
+			const option = uci.get(data[0], section_id, 'type');
+
+			if (option === 'file')
+				return hm.writeFile.call(this, this.section.sectiontype, section_id, formvalue);
+		}
+		so.remove = function(section_id) {
+			const option = uci.get(data[0], section_id, 'type');
+			const cached_option = this.section.getOption('type').cfgvalue(section_id);
+
+			if (option === 'file' && cached_option === 'file')
+				return hm.writeFile.call(this, this.section.sectiontype, section_id);
+		}
 		so.depends('type', 'file');
 		so.modalonly = true;
 
@@ -1575,13 +1605,13 @@ return view.extend({
 		so = ss.option(CBIBubblesValue, '_value', _('Value'));
 		so.modalonly = false;
 
-		so = ss.option(form.ListValue, 'chain_head_sub', _('Chain head') + _(' (Destination)'));
+		so = ss.option(form.ListValue, 'chain_head_sub', _('Destination provider'));
 		so.load = L.bind(hm.loadProviderLabel, so, [['', _('-- Please choose --')]]);
 		so.rmempty = false;
 		so.depends('type', 'provider');
 		so.modalonly = true;
 
-		so = ss.option(form.ListValue, 'chain_head', _('Chain head') + _(' (Destination)'));
+		so = ss.option(form.ListValue, 'chain_head', _('Destination proxy node'));
 		so.load = L.bind(hm.loadNodeLabel, so, [['', _('-- Please choose --')]]);
 		so.rmempty = false;
 		so.validate = function(section_id, value) {
@@ -1595,13 +1625,13 @@ return view.extend({
 		so.depends('type', 'node');
 		so.modalonly = true;
 
-		so = ss.option(form.ListValue, 'chain_tail_group', _('Chain tail') + _(' (Transit)'));
+		so = ss.option(form.ListValue, 'chain_tail_group', _('Transit proxy group'));
 		so.load = L.bind(hm.loadProxyGroupLabel, so, [['', _('-- Please choose --')]]);
 		so.rmempty = false;
 		so.depends({chain_tail: /.+/, '!reverse': true});
 		so.modalonly = true;
 
-		so = ss.option(form.ListValue, 'chain_tail', _('Chain tail') + _(' (Transit)'));
+		so = ss.option(form.ListValue, 'chain_tail', _('Transit proxy node'));
 		so.load = L.bind(hm.loadNodeLabel, so, [['', _('-- Please choose --')]]);
 		so.rmempty = false;
 		so.validate = function(section_id, value) {

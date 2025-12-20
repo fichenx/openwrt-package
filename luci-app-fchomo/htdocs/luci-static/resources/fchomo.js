@@ -20,7 +20,7 @@ const sharktaikogif = function() {
 'c2hhcmstdGFpa28uZ2lm'
 }()
 
-const pr7558_merged = form.DynamicList.prototype.renderWidget.toString().match('this\.allowduplicates');
+const less_25_12 = !form.DynamicList.prototype.renderWidget.toString().match('this\.allowduplicates');
 
 const HM_DIR = "/etc/fchomo";
 
@@ -413,7 +413,7 @@ const CBIGridSection = form.GridSection.extend({
 	}
 });
 
-const CBIDynamicList = form.DynamicList.extend({ // @pr7558_merged
+const CBIDynamicList = form.DynamicList.extend({ // @less_25_12
 	__name__: 'CBI.DynamicList',
 
 	renderWidget(section_id, option_index, cfgvalue) {
@@ -440,7 +440,7 @@ const CBIStaticList = form.DynamicList.extend({
 	__name__: 'CBI.StaticList',
 
 	renderWidget(/* ... */) {
-		let El = (!pr7558_merged ? CBIDynamicList : form.DynamicList).prototype.renderWidget.apply(this, arguments); // @pr7558_merged
+		let El = (less_25_12 ? CBIDynamicList : form.DynamicList).prototype.renderWidget.apply(this, arguments); // @less_25_12
 
 		El.querySelector('.add-item ul > li[data-value="-"]')?.remove();
 
@@ -515,6 +515,80 @@ const CBIGenText = CBITextValue.extend({
 	}
 });
 
+const CBICopyValue = form.Value.extend({
+	__name__: 'CBI.CopyValue',
+
+	readonly: true,
+
+	renderWidget(section_id, option_index, cfgvalue) {
+		let node = form.Value.prototype.renderWidget.call(this, section_id, option_index, cfgvalue);
+
+		node.classList.add('control-group');
+
+		node.appendChild(E('button', {
+			class: 'cbi-button cbi-button-add',
+			click: ui.createHandlerFn(this, async (section_id) => {
+				try {
+					await navigator.clipboard.writeText(this.formvalue(section_id));
+					console.log('Content copied to clipboard!');
+				} catch (e) {
+					console.error('Failed to copy: ', e);
+				}
+				/* Deprecated
+				let inputEl = document.getElementById(this.cbid(section_id)).querySelector('input');
+				inputEl.select();
+				document.execCommand("copy");
+				inputEl.blur();
+				*/
+				return alert(_('Content copied to clipboard!'));
+			}, section_id)
+		}, [ _('Copy') ]));
+
+		return node;
+	}
+});
+
+const CBIparseYaml = baseclass.extend(/** @lends hm.parseYaml.prototype */ {
+	__init__(field, name, cfg) {
+		if (isEmpty(cfg))
+			return null;
+
+		if (typeof cfg === 'object') {
+			this.id = this.calcID(field, name ?? cfg.name);
+			this.label = '%s %s'.format(name ?? cfg.name, _('(Imported)'));
+		} else {
+			this.id = this.calcID(field, name ?? cfg);
+			this.label = '%s %s'.format(name ?? cfg, _('(Imported)'));
+		}
+
+		this.field = field;
+		this.name = name;
+		this.cfg = this.key_mapping(cfg);
+	},
+
+	key_mapping(cfg) {
+		return cfg;
+	},
+
+	calcID(field, name) {
+		return calcStringMD5(String.format('%s:%s', field, name));
+	},
+
+	bool2str(value) {
+		if (typeof value !== 'boolean')
+			return null;
+		return value ? '1' : '0';
+	},
+
+	jq(obj, path) {
+		return path.split('.').reduce((acc, cur) => acc && acc[cur], obj);
+	},
+
+	output() {
+		return this.cfg;
+	}
+});
+
 const CBIHandleImport = baseclass.extend(/** @lends hm.HandleImport.prototype */ {
 	__init__(map, section, title, description) {
 		this.map = map;
@@ -524,10 +598,6 @@ const CBIHandleImport = baseclass.extend(/** @lends hm.HandleImport.prototype */
 		this.placeholder = '';
 		this.appendcommand = '';
 		this.overridecommand = '';
-	},
-
-	calcID(field, name) {
-		return calcStringMD5(String.format('%s:%s', field, name));
 	},
 
 	handleFn(textarea) {
@@ -547,7 +617,7 @@ const CBIHandleImport = baseclass.extend(/** @lends hm.HandleImport.prototype */
 			if (!isEmpty(res) && typeof res === 'object') {
 				if (Array.isArray(res))
 					res.forEach((cfg) => {
-						let config = this.parseYaml(field, null, cfg);
+						let config = new this.parseYaml(field, null, cfg).output();
 						//console.info(JSON.stringify(config, null, 2));
 						if (config) {
 							this.write(config);
@@ -556,7 +626,7 @@ const CBIHandleImport = baseclass.extend(/** @lends hm.HandleImport.prototype */
 					})
 				else
 					for (let name in res) {
-						let config = this.parseYaml(field, name, res[name]);
+						let config = new this.parseYaml(field, name, res[name]).output();
 						//console.info(JSON.stringify(config, null, 2));
 						if (config) {
 							this.write(config);
@@ -585,17 +655,7 @@ const CBIHandleImport = baseclass.extend(/** @lends hm.HandleImport.prototype */
 		});
 	},
 
-	parseYaml(field, name, cfg) {
-		if (isEmpty(cfg))
-			return null;
-
-		if (typeof cfg === 'object') {
-			cfg.hm_id = this.calcID(field, name ?? cfg.name);
-			cfg.hm_label = '%s %s'.format(name ?? cfg.name, _('(Imported)'));
-		}
-
-		return cfg;
-	},
+	parseYaml: CBIparseYaml,
 
 	render() {
 		const textarea = new ui.Textarea('', {
@@ -640,7 +700,7 @@ const CBIHandleImport = baseclass.extend(/** @lends hm.HandleImport.prototype */
 	}
 });
 
-const UIDynamicList = ui.DynamicList.extend({ // @pr7558_merged
+const UIDynamicList = ui.DynamicList.extend({ // @less_25_12
 	addItem(dl, value, text, flash) {
 		if (this.options.allowduplicates) {
 			const new_item = E('div', { class: flash ? 'item flash' : 'item', tabindex: 0, draggable: true }, [
@@ -668,12 +728,6 @@ const UIDynamicList = ui.DynamicList.extend({ // @pr7558_merged
 });
 
 /* Method */
-function bool2str(value) {
-	if (typeof value !== 'boolean')
-		return null;
-	return value ? '1' : '0';
-}
-
 /* thanks to homeproxy */
 function calcStringMD5(e) {
 	/* Thanks to https://stackoverflow.com/a/41602636 */
@@ -816,8 +870,26 @@ function generateRand(type, length) {
 	};
 }
 
-function getValue(obj, path) {
-	return path.split('.').reduce((acc, cur) => acc && acc[cur], obj);
+function shuffle(StrORArr) {
+	let arr;
+
+	if (typeof StrORArr === 'string')
+		arr = StrORArr.split('');
+	else if (Array.isArray(StrORArr))
+		arr = StrORArr;
+	else
+		throw new Error(`String or Array only`);
+
+    for (let i = arr.length - 1; i > 0; i--) {         // Traverse the array from back to front
+        const j = Math.floor(Math.random() * (i + 1)); // Generate a random index between 0 and i
+
+        [arr[i], arr[j]] = [arr[j], arr[i]];           // Swap positions
+    }
+
+	if (typeof StrORArr === 'string')
+		return arr.join('');
+	else if (Array.isArray(StrORArr))
+		return arr;
 }
 
 function json2yaml(object, command) {
@@ -1116,6 +1188,8 @@ function handleGenKey(option) {
 
 		if (option === 'uuid' || option.match(/_uuid/))
 			required_method = 'uuid';
+		else if (option.match(/sudoku_custom_table/))
+			required_method = 'sudoku_custom_table';
 		else if (type === 'shadowsocks' && option === 'shadowsocks_password')
 			required_method = this.section.getOption('shadowsocks_chipher')?.formvalue(section_id);
 		else if (type === 'trojan' && option === 'trojan_ss_password')
@@ -1129,6 +1203,10 @@ function handleGenKey(option) {
 			/* UUID */
 			case 'uuid':
 				password = generateRand('uuid');
+				break;
+			/* SUDOKU CUSTOM TABLE */
+			case 'sudoku_custom_table':
+				password = shuffle('xxppvvvv');
 				break;
 			/* DEFAULT */
 			default:
@@ -1388,6 +1466,22 @@ function validateShadowsocksPassword(encmode, section_id, value) {
 	return true;
 }
 
+function validateSudokuCustomTable(section_id, value) {
+	if (!value)
+		return true;
+
+	if (value.length !== 8)
+		return _('Expecting: %s').format(_('valid format: 2x, 2p, 4v'));
+
+	const counts = {};
+    for (const c of value)
+        counts[c] = (counts[c] || 0) + 1;
+    if (!(counts.x === 2 && counts.p === 2 && counts.v === 4))
+		return _('Expecting: %s').format(_('valid format: 2x, 2p, 4v'));
+
+	return true;
+}
+
 function validateUniqueValue(section_id, value) {
 	if (!value)
 		return _('Expecting: %s').format(_('non-empty value'));
@@ -1529,7 +1623,7 @@ return baseclass.extend({
 	rulesetdoc,
 	sharkaudio,
 	sharktaikogif,
-	pr7558_merged,
+	less_25_12,
 	HM_DIR,
 	monospacefonts,
 	checkurls,
@@ -1568,17 +1662,18 @@ return baseclass.extend({
 	TextValue: CBITextValue,
 	GenValue: CBIGenValue,
 	GenText: CBIGenText,
+	CopyValue: CBICopyValue,
+	parseYaml: CBIparseYaml,
 	HandleImport: CBIHandleImport,
 
 	/* Method */
-	bool2str,
 	calcStringMD5,
 	decodeBase64Str,
 	encodeBase64Str,
 	decodeBase64Bin,
 	encodeBase64Bin,
 	generateRand,
-	getValue,
+	shuffle,
 	json2yaml,
 	yaml2json,
 	isEmpty,
@@ -1619,6 +1714,7 @@ return baseclass.extend({
 	validateMTLSClientAuth,
 	validatePresetIDs,
 	validateShadowsocksPassword,
+	validateSudokuCustomTable,
 	validateUniqueValue,
 	// file operations
 	lsDir,

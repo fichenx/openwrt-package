@@ -192,14 +192,23 @@ sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-app-nft-qos/Makefil
 sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-app-wireguard/Makefile
 sed -i 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|g' luci-lib-ipkg/Makefile
 
-#更新dockerd(修改前使用的源为：https://github.com/kenzok8/wall)
-sed -i 's|\(PKG_VERSION:=\)[0-9]\+\.[0-9]\+\.[0-9]\+|\129.1.2|g' dockerd/Makefile
-sed -i 's|PKG_HASH:=.*|PKG_HASH:=f11949f3d8dcbcbd6d5de0b345b5ec8dbdd74572c6ce614c7b6e7551829d8035|g' dockerd/Makefile
-sed -i 's|PKG_GIT_REF:=v|PKG_GIT_REF:=docker-v|g' dockerd/Makefile
-#更新docker(修改前使用的源为：https://github.com/kenzok8/wall)
-#sed -i 's|\(PKG_VERSION:=\)[0-9]\+\.[0-9]\+\.[0-9]\+|\128.3.0|g' docker/Makefile
-#sed -i 's|PKG_HASH:=.*|PKG_HASH:=0ac18927138cd2582e02277d365174a118b962f10084a6bef500a58de705e094|g' docker/Makefile
-
+##docker及其依赖
+#dockerd(修改前使用的源为：https://github.com/kenzok8/wall),插件地址：https://github.com/moby/moby
+sed -i 's|\(PKG_VERSION:=\)[0-9]\+\.[0-9]\+\.[0-9]\+.*|\128.5.1|g' dockerd/Makefile
+sed -i 's|PKG_HASH:=.*|PKG_HASH:=c17f48bbea209f00e62915dfdbb90e471d296202e466335e43fc9d5982ae3a6a|g' dockerd/Makefile
+#sed -i 's|PKG_GIT_REF:=v|PKG_GIT_REF:=docker-v|g' dockerd/Makefile
+#docker(修改前使用的源为：https://github.com/kenzok8/wall),插件地址：https://github.com/docker/cli
+sed -i 's|\(PKG_VERSION:=\)[0-9]\+\.[0-9]\+\.[0-9]\+.*|\128.5.1|g' docker/Makefile
+sed -i 's|PKG_HASH:=.*|PKG_HASH:=3872f03dd3d1e2769ecad57c8744743e72ad619f72f1897f4886fd44746337cd|g' docker/Makefile
+#containerd，插件地址：https://github.com/containerd/containerd
+git_sparse_clone master https://github.com/coolsnowwolf/packages utils/containerd
+sed -i 's/PKG_VERSION:=.*/PKG_VERSION:=1.7.28/g' containerd/Makefile
+sed -i 's/PKG_HASH:=.*/PKG_HASH:=546aa9fdb04a0cd40a5cbc5c931c269d42522d473abd7234b98d98e63316ed9b/g' containerd/Makefile
+sed -i 's/containerd-shim,containerd-shim-runc-v1,//g' containerd/Makefile
+#runc，插件地址：https://github.com/opencontainers/runc
+git_sparse_clone master https://github.com/coolsnowwolf/packages utils/runc
+sed -i 's/PKG_VERSION:=.*/PKG_VERSION:=1.3.0/g' runc/Makefile
+sed -i 's/PKG_HASH:=.*/PKG_HASH:=3262492ce42bea0919ee1a2d000b6f303fd14877295bc38d094876b55fdd448b/g' runc/Makefile
 
 
 ######################################

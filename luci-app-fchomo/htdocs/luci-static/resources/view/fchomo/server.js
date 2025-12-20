@@ -7,44 +7,11 @@
 
 'require fchomo as hm';
 
-const CBICopyValue = form.Value.extend({
-	__name__: 'CBI.CopyValue',
-
-	readonly: true,
-
-	renderWidget(section_id, option_index, cfgvalue) {
-		let node = form.Value.prototype.renderWidget.call(this, section_id, option_index, cfgvalue);
-
-		node.classList.add('control-group');
-
-		node.appendChild(E('button', {
-			class: 'cbi-button cbi-button-add',
-			click: ui.createHandlerFn(this, async (section_id) => {
-				try {
-					await navigator.clipboard.writeText(this.formvalue(section_id));
-					console.log('Content copied to clipboard!');
-				} catch (e) {
-					console.error('Failed to copy: ', e);
-				}
-				/* Deprecated
-				let inputEl = document.getElementById(this.cbid(section_id)).querySelector('input');
-				inputEl.select();
-				document.execCommand("copy");
-				inputEl.blur();
-				*/
-				return alert(_('Content copied to clipboard!'));
-			}, section_id)
-		}, [ _('Copy') ]));
-
-		return node;
-	}
-});
-
-const CBIDummyCopyValue = CBICopyValue.extend({
+const CBIDummyCopyValue = hm.CopyValue.extend({
 	__name__: 'CBI.DummyCopyValue',
 
 	renderWidget(/* ... */) {
-		let node = CBICopyValue.prototype.renderWidget.apply(this, arguments);
+		let node = hm.CopyValue.prototype.renderWidget.apply(this, arguments);
 
 		node.firstChild.style.width = '30em';
 
@@ -382,7 +349,7 @@ return view.extend({
 		o.depends('type', 'sudoku');
 		o.modalonly = true;
 
-		o = s.taboption('field_general', CBICopyValue, 'sudoku_client_key', _('Client key'));
+		o = s.taboption('field_general', hm.CopyValue, 'sudoku_client_key', _('Client key'));
 		o.depends('type', 'sudoku');
 		o.modalonly = true;
 
@@ -391,6 +358,14 @@ return view.extend({
 		hm.sudoku_cipher_methods.forEach((res) => {
 			o.value.apply(o, res);
 		})
+		o.validate = function(section_id, value) {
+			const pure_downlink = this.section.getUIElement(section_id, 'sudoku_enable_pure_downlink')?.node.querySelector('input').checked;
+
+			if (value === 'none' && pure_downlink === false)
+				return _('Expecting: %s').format(_('Chipher must be enabled if obfuscate downlink is disabled.'));
+
+			return true;
+		}
 		o.depends('type', 'sudoku');
 		o.modalonly = true;
 
@@ -398,6 +373,22 @@ return view.extend({
 		o.value('prefer_ascii', _('Obfuscated as ASCII data stream'));
 		o.value('prefer_entropy', _('Obfuscated as low-entropy data stream'));
 		o.depends('type', 'sudoku');
+		o.modalonly = true;
+
+		o = s.taboption('field_general', form.DynamicList, 'sudoku_custom_tables', _('Custom byte layout'));
+		o.renderWidget = function(/* ... */) {
+			let node = form.DynamicList.prototype.renderWidget.apply(this, arguments);
+
+			(node.querySelector('.control-group') || node).appendChild(E('button', {
+				class: 'cbi-button cbi-button-positive',
+				title: _('Generate'),
+				click: ui.createHandlerFn(this, hm.handleGenKey, this.hm_options || this.option)
+			}, [ _('Generate') ]));
+
+			return node;
+		}
+		o.validate = hm.validateSudokuCustomTable;
+		o.depends('sudoku_table_type', 'prefer_entropy');
 		o.modalonly = true;
 
 		o = s.taboption('field_general', form.Value, 'sudoku_padding_min', _('Minimum padding'));
@@ -417,6 +408,13 @@ return view.extend({
 		o = s.taboption('field_general', form.Value, 'sudoku_handshake_timeout', _('Handshake timeout'));
 		o.datatype = 'uinteger';
 		o.placeholder = 5;
+		o.depends('type', 'sudoku');
+		o.modalonly = true;
+
+		o = s.taboption('field_general', form.Flag, 'sudoku_enable_pure_downlink', _('Enable obfuscate for downlink'),
+			_('When disabled, downlink ciphertext is split into 6-bit segments, reusing the original padding pool and obfuscate type to reduce downlink overhead.') + '</br>' +
+			_('Uplink keeps the Sudoku protocol, and downlink characteristics are consistent with uplink characteristics.'));
+		o.default = o.enabled;
 		o.depends('type', 'sudoku');
 		o.modalonly = true;
 
@@ -628,7 +626,7 @@ return view.extend({
 		o.depends('vless_decryption', '1');
 		o.modalonly = true;
 
-		o = s.taboption('field_vless_encryption', !hm.pr7558_merged ? hm.DynamicList : form.DynamicList, 'vless_encryption_paddings', _('Paddings'), // @pr7558_merged
+		o = s.taboption('field_vless_encryption', hm.less_25_12 ? hm.DynamicList : form.DynamicList, 'vless_encryption_paddings', _('Paddings'), // @less_25_12
 			_('The server and client can set different padding parameters.') + '</br>' +
 			_('In the order of one <code>Padding-Length</code> and one <code>Padding-Interval</code>, infinite concatenation.') + '</br>' +
 			_('The first padding must have a probability of 100% and at least 35 bytes.'));
@@ -885,7 +883,7 @@ return view.extend({
 		o.depends({tls: '1', type: /^(http|socks|mixed|vmess|vless|trojan|anytls|hysteria2|tuic)$/});
 		o.modalonly = true;
 
-		o = s.taboption('field_tls', CBICopyValue, 'tls_ech_config', _('ECH config'),
+		o = s.taboption('field_tls', hm.CopyValue, 'tls_ech_config', _('ECH config'),
 			_('This ECH parameter needs to be added to the HTTPS record of the domain.'));
 		o.placeholder = 'AEn+DQBFKwAgACABWIHUGj4u+PIggYXcR5JF0gYk3dCRioBW8uJq9H4mKAAIAAEAAQABAANAEnB1YmxpYy50bHMtZWNoLmRldgAA';
 		o.depends({tls: '1', type: /^(http|socks|mixed|vmess|vless|trojan|anytls|hysteria2|tuic)$/});
@@ -919,7 +917,7 @@ return view.extend({
 		o.depends('tls_reality', '1');
 		o.modalonly = true;
 
-		o = s.taboption('field_tls', CBICopyValue, 'tls_reality_public_key', _('REALITY public key'));
+		o = s.taboption('field_tls', hm.CopyValue, 'tls_reality_public_key', _('REALITY public key'));
 		o.depends('tls_reality', '1');
 		o.modalonly = true;
 

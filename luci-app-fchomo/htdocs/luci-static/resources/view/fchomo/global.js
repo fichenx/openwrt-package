@@ -560,7 +560,7 @@ return view.extend({
 		so = ss.option(hm.GenText, 'tls_ech_key', _('API ECH key'));
 		so.placeholder = '-----BEGIN ECH KEYS-----\nACATwY30o/RKgD6hgeQxwrSiApLaCgU+HKh7B6SUrAHaDwBD/g0APwAAIAAgHjzK\nmadSJjYQIf9o1N5GXjkW4DEEeb17qMxHdwMdNnwADAABAAEAAQACAAEAAwAIdGVz\ndC5jb20AAA==\n-----END ECH KEYS-----';
 		so.hm_placeholder = 'outer-sni.any.domain';
-		so.cols = 30
+		so.cols = 30;
 		so.rows = 2;
 		so.hm_options = {
 			type: 'ech-keypair',
@@ -596,7 +596,7 @@ return view.extend({
 			return node;
 		}
 
-		so = ss.option(form.Value, 'tls_ech_cfg', _('API ECH config'),
+		so = ss.option(hm.CopyValue, 'tls_ech_cfg', _('API ECH config'),
 			_('This ECH parameter needs to be added to the HTTPS record of the domain.'));
 		so.placeholder = 'AEn+DQBFKwAgACABWIHUGj4u+PIggYXcR5JF0gYk3dCRioBW8uJq9H4mKAAIAAEAAQABAANAEnB1YmxpYy50bHMtZWNoLmRldgAA';
 		/* TLS END */
@@ -841,7 +841,22 @@ return view.extend({
 			_('Routing mode of the traffic enters mihomo via firewall rules.'));
 		so.value('', _('All allowed'));
 		so.value('bypass_cn', _('Bypass CN'));
-		so.value('routing_gfw', _('Routing GFW'));
+		if (features.has_dnsmasq_full)
+			so.value('routing_gfw', _('Routing GFW'));
+		so.validate = function(section_id, value) {
+			const mode = this.section.getOption('routing_mode').formvalue(section_id);
+			let pd = this.section.getUIElement(section_id, 'routing_domain').node.querySelector('input');
+
+			// Force enabled
+			if (mode === 'routing_gfw') {
+				pd.checked = true;
+				pd.disabled = true;
+			} else {
+				pd.removeAttribute('disabled');
+			}
+
+			return true;
+		}
 
 		so = ss.taboption('routing_control', form.Flag, 'routing_domain', _('Handle domain'),
 			_('Routing mode will be handle domain.') + '</br>' +
