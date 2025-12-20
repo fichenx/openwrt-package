@@ -205,6 +205,9 @@ git_sparse_clone master https://github.com/coolsnowwolf/packages utils/runc
 sed -i 's/PKG_VERSION:=.*/PKG_VERSION:=1.3.0/g' runc/Makefile
 sed -i 's/PKG_HASH:=.*/PKG_HASH:=3262492ce42bea0919ee1a2d000b6f303fd14877295bc38d094876b55fdd448b/g' runc/Makefile
 
+#修复naiveproxy
+sed -i 's|d2b41880a40e204ebe91baaf8202d0d1f3004b5335266afa426c680f2f0a909e|a4b34126901ad577a018332dd8cfa015ca5de1dcbbcf445465fb5a89a29a6b29|g' naiveproxy/Makefile
+
 
 
 
