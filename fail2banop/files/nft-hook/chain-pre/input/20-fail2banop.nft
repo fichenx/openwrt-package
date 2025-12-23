@@ -1,2 +1,0 @@
-ip saddr @fail2banop4 drop
-ip6 saddr @fail2banop6 drop
