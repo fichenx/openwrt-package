@@ -9,9 +9,7 @@ function git_sparse_clone() {
   rootdir="$PWD"
   git clone -b $branch --depth 1 --filter=blob:none --sparse $rurl temp_sparse
   #git clone -b $branch --single-branch --no-tags --depth 1 --filter=blob:none --no-checkout $rurl temp_sparse
-  cd temp_sparse
-  git sparse-checkout init --cone
-  git sparse-checkout set $@
+  cd temp_sparse &&git sparse-checkout init --cone && git sparse-checkout set $@
   pkg=`echo $@ | tr ' ' '\n' | rev | cut -d'/' -f 1 | rev | tr '\n' ' ' `
   #[ -d ../package/custom ] && cd ../package/custom && rm -rf $pkg && cd "$rootdir"/temp_sparse
   cd ../ && rm -rf $pkg && cd "$rootdir"/temp_sparse
