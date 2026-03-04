@@ -3,16 +3,34 @@
 function git_clone() {
   git clone --depth 1 $1 $2 || true
  }
+#function git_sparse_clone() {
+#  branch="$1" rurl="$2" localdir="$3" && shift 3
+#  git clone -b $branch --depth 1 --filter=blob:none --sparse $rurl $localdir
+#  cd $localdir
+#  git sparse-checkout init --cone
+#  git sparse-checkout set $@
+#  mv -n $@ ../
+#  cd ..
+#  rm -rf $localdir
+#  }
+
 function git_sparse_clone() {
   branch="$1" rurl="$2" localdir="$3" && shift 3
-  git clone -b $branch --depth 1 --filter=blob:none --sparse $rurl $localdir
-  cd $localdir
-  git sparse-checkout init --cone
-  git sparse-checkout set $@
-  mv -n $@ ../
-  cd ..
-  rm -rf $localdir
+  git clone -b "$branch" --depth 1 --filter=blob:none --sparse "$rurl" "$localdir" || {
+    echo "克隆仓库失败：$rurl"
+    return 1
   }
+  cd "$localdir" || {
+    echo "进入目录失败：$localdir"
+    return 1
+  }
+  git sparse-checkout init --cone
+  git sparse-checkout set "$@"
+  mv -n "$@" ../
+  cd ..
+  rm -rf "$localdir"
+}
+
 function mvdir() {
 mv -n `find $1/* -maxdepth 0 -type d` ./
 rm -rf $1
