@@ -16,6 +16,7 @@ function git_sparse_clone() {
   #[ -d ../package/custom ] && cd ../package/custom && rm -rf $pkg && cd "$rootdir"/temp_sparse
   cd ../ && rm -rf $pkg && cd "$rootdir"/temp_sparse
   mv -f $@ ../
+  git sparse-checkout disable
   cd ..
   rm -rf temp_sparse
   }
