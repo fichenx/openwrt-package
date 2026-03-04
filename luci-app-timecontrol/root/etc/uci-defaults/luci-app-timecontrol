@@ -1,0 +1,16 @@
+#!/bin/sh
+
+uci -q delete firewall.timecontrol
+uci -q set firewall.timecontrol=include
+uci -q set firewall.timecontrol.type=script
+uci -q set firewall.timecontrol.path=/var/etc/timecontrol.include
+[ -n "$(command -v fw4)" ] || uci -q set firewall.timecontrol.reload=1
+uci -q commit firewall
+
+uci -q delete ucitrack.@timecontrol[-1]
+uci -q add ucitrack timecontrol
+uci -q set ucitrack.@timecontrol[-1].init=timecontrol
+uci -q commit ucitrack
+
+rm -f /tmp/luci-indexcache* 2>/dev/null
+exit 0

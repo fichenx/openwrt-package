@@ -1,0 +1,31 @@
+{
+	"luci-app-timecontrol": {
+		"description": "Grant UCI access for luci-app-timecontrol",
+		"read": {
+			"uci": [
+				"timecontrol"
+			],
+			"file": {
+				"/usr/sbin/iptables": [
+					"exec"
+				],
+				"/usr/sbin/ip6tables": [
+					"exec"
+				],
+				"/usr/sbin/nft": [
+					"exec"
+				]
+			},
+			"ubus": {
+				"file": [
+					"exec"
+				]
+			}
+		},
+		"write": {
+			"uci": [
+				"timecontrol"
+			]
+		}
+	}
+}
