@@ -52,11 +52,6 @@ jobs:
         rm -rf ${{matrix.target}}
         git clone --no-sparse -b ${{matrix.target}} https://github.com/fichenx/openwrt-package.git ${{matrix.target}}
         cd ${{matrix.target}}
-        git sparse-checkout disable
-        rm -f .git/info/sparse-checkout
-        git config --unset core.sparseCheckout
-        git config core.sparseCheckout false
-        git pull origin ${{matrix.target}} --depth=1
         git rm -r --cache * >/dev/null 2>&1 &
         rm -rf `find ./* -maxdepth 0 -type d ! -name "diy" ! -name "mysh" ! -name ".github" ! -name ".git"` >/dev/null 2>&1
         #rm -rf $GITHUB_WORKSPACE/.github/diy .github/diy
