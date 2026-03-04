@@ -1,0 +1,184 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+TIMECONTROL_ENABLE=0
+FW4=$(command -v fw4 2>/dev/null)
+FW3_IP6=$(command -v ip6tables 2>/dev/null)
+
+interface=$(
+	. /lib/functions/network.sh
+
+	network_is_up "lan" && network_get_device device "lan"
+	echo "${device:-br-lan}"
+)
+
+iptables_w() {
+	iptables -w 1 "$@" >/dev/null 2>&1
+	[ -n "$FW3_IP6" ] && ip6tables -w 1 "$@" >/dev/null 2>&1
+}
+
+add_rule() {
+	local enable macaddrlist timerangelist days
+
+	config_get enable "$1" enable "0"
+	config_get macaddrlist "$1" macaddrlist
+	config_get timerangelist "$1" timerangelist
+	config_get days "$1" days
+	config_get unblockDuration "$1" unblockDuration "0"
+
+	if [ -z "$enable" ] || [ "$enable" != "1" ] || [ -z "$macaddrlist" ] || [ -z "$timerangelist" ] || [ -z "$unblockDuration" ] || [ $unblockDuration -gt 0 ]; then
+		return 0
+	fi
+
+	if [ -z "$days" ]; then
+		days="Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday"
+	else
+		days=$(echo "$days" | sed 's/ /,/g')
+	fi
+
+	for timerange in $timerangelist; do
+		timeon=$(echo "$timerange" | awk -F '-' '{print $1}')
+		timeoff=$(echo "$timerange" | awk -F '-' '{print $2}')
+
+		if [ -z "$FW4" ]; then
+			local chain target
+			for macaddr in $macaddrlist; do
+				for table in filter nat; do
+					case $table in
+					filter)
+						chain="timecontrol_forward_reject"
+						target="reject"
+						;;
+					nat)
+						chain="timecontrol_dstnat_accept"
+						target="ACCEPT"
+						;;
+					*) ;;
+					esac
+					iptables_w -t $table -A $chain -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays "$days" -j $target -m comment --comment "!fw3: Time control"
+				done
+			done
+		else
+			macaddr=$(echo $macaddrlist | sed 's/ /,/g')
+			nft "add rule inet fw4 timecontrol_forward_reject ether saddr { ${macaddr} } meta hour \"${timeon}\"-\"${timeoff}\" meta day { ${days} } counter jump handle_reject comment \"!fw4: Time control\""
+			nft "add rule inet fw4 timecontrol_dstnat_accept ether saddr { ${macaddr} } meta hour \"${timeon}\"-\"${timeoff}\" meta day { ${days} } counter accept comment \"!fw4: Time control\""
+		fi
+	done
+	logger -t timecontrol "Added timecontrol rule (MAC: ${macaddrlist}, Time: ${timerangelist}, Days: ${days})"
+
+	if [ -n "$(command -v conntrack 2>/dev/null)" ]; then
+		regex=$(echo ${macaddrlist} | sed 's/ /|/g')
+		ipaddr_list=$(ip neigh | grep -i -E "${regex}" | awk '{print $1}')
+
+		for ipaddr in $ipaddr_list; do
+			conntrack -D --orig-src "$ipaddr" >/dev/null 2>&1
+		done
+		logger -t timecontrol "Deleted conntrack entries for IPs: ${ipaddr_list}"
+	fi
+}
+
+timecontrol_header() {
+	config_get TIMECONTROL_ENABLE "$1" enable "0"
+}
+
+start() {
+	stop
+	config_load timecontrol
+	config_foreach timecontrol_header basic
+
+	[ "$TIMECONTROL_ENABLE" != "1" ] && return 0
+
+	logger -t timecontrol "Starting Time Control"
+
+	if [ -z "$FW4" ]; then
+		local chain jumpChain
+		for table in filter nat; do
+			case $table in
+			filter)
+				chain="FORWARD"
+				jumpChain="timecontrol_forward_reject"
+				;;
+			nat)
+				chain="PREROUTING"
+				jumpChain="timecontrol_dstnat_accept"
+				;;
+			*) ;;
+			esac
+			iptables_w -t $table -N $jumpChain
+			iptables_w -t $table -F $jumpChain
+			iptables_w -t $table -I $chain -i $interface -j $jumpChain
+		done
+	else
+		nft 'add chain inet fw4 timecontrol_forward_reject'
+		nft 'add chain inet fw4 timecontrol_dstnat_accept'
+		nft "insert rule inet fw4 forward iifname \"${interface}\" counter jump timecontrol_forward_reject comment \"!fw4: Time control\" "
+		nft "insert rule inet fw4 dstnat iifname \"${interface}\" counter jump timecontrol_dstnat_accept comment \"!fw4: Time control\" "
+	fi
+	logger -t timecontrol "Initialized timecontrol chains (interface: ${interface})"
+
+	config_foreach add_rule macbind
+
+	echo "/etc/init.d/timecontrol restart" >"/var/etc/timecontrol.include"
+
+	if [ ! -f /var/run/timecontrol_watchdog.pid ] || ! kill -0 $(cat /var/run/timecontrol_watchdog.pid) 2>/dev/null; then
+		/usr/bin/timecontrol_watchdog.sh &
+		echo $! >/var/run/timecontrol_watchdog.pid
+	fi
+
+	logger -t timecontrol "Time Control started"
+}
+
+stop() {
+	logger -t timecontrol "Stopping Time Control"
+	rm -f "/var/etc/timecontrol.include" >/dev/null 2>&1
+
+	if [ -f /var/run/timecontrol_watchdog.pid ]; then
+		kill $(cat /var/run/timecontrol_watchdog.pid) 2>/dev/null
+		rm -f /var/run/timecontrol_watchdog.pid
+	fi
+
+	if [ -z "$FW4" ]; then
+		local chain jumpChain
+		for table in filter nat; do
+			case $table in
+			filter)
+				chain="FORWARD"
+				jumpChain="timecontrol_forward_reject"
+				;;
+			nat)
+				chain="PREROUTING"
+				jumpChain="timecontrol_dstnat_accept"
+				;;
+			*) ;;
+			esac
+			for ipt in iptables ip6tables; do
+				while $ipt -w 1 -t $table -C $chain -i $interface -j $jumpChain 2>/dev/null; do
+					$ipt -w 1 -t $table -D $chain -i $interface -j $jumpChain 2>/dev/null
+				done
+			done
+			iptables_w -t $table -F $jumpChain
+			iptables_w -t $table -X $jumpChain
+		done
+	else
+		for chain in forward dstnat; do
+			local jumpChain
+			case $chain in
+			forward)
+				jumpChain="timecontrol_forward_reject"
+				;;
+			dstnat)
+				jumpChain="timecontrol_dstnat_accept"
+				;;
+			*) ;;
+			esac
+			rule_handles=$(nft -a list chain inet fw4 $chain | grep "$jumpChain" | awk '{print $NF}')
+			for handle in $rule_handles; do
+				nft delete rule inet fw4 $chain handle $handle >/dev/null 2>&1
+			done
+		done
+		nft delete chain inet fw4 timecontrol_forward_reject >/dev/null 2>&1
+		nft delete chain inet fw4 timecontrol_dstnat_accept >/dev/null 2>&1
+	fi
+	logger -t timecontrol "Time Control stopped"
+}

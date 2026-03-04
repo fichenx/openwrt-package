@@ -1,0 +1,68 @@
+msgid "Control"
+msgstr "管控"
+
+msgid "Internet Time Control"
+msgstr "上网时间控制"
+
+msgid "Status"
+msgstr "状态"
+
+msgid "Enabled"
+msgstr "启用"
+
+msgid "Client Settings"
+msgstr "客户端设置"
+
+msgid "No Internet Time Range"
+msgstr "禁网时段"
+
+msgid "Monday"
+msgstr "星期一"
+
+msgid "Tuesday"
+msgstr "星期二"
+
+msgid "Wednesday"
+msgstr "星期三"
+
+msgid "Thursday"
+msgstr "星期四"
+
+msgid "Friday"
+msgstr "星期五"
+
+msgid "Saturday"
+msgstr "星期六"
+
+msgid "Sunday"
+msgstr "星期日"
+
+msgid "Days of Week"
+msgstr "星期"
+
+msgid "RUNNING"
+msgstr "运行中"
+
+msgid "NOT RUNNING"
+msgstr "未运行"
+
+msgid "Please select at least one MAC address"
+msgstr "请至少选择一个 MAC 地址"
+
+msgid "Invalid MAC address: "
+msgstr "MAC地址无效: "
+
+msgid "Invalid time range: "
+msgstr "时段无效: "
+
+msgid "Users can limit Internet usage time by MAC address, support iptables/nftables IPv4/IPv6"
+msgstr "用户可以通过 MAC 地址限制互联网使用时间，支持 iptables/nftables IPv4/IPv6"
+
+msgid "Temporary Unblock"
+msgstr "临时解禁"
+
+msgid "Allowed values: 0 ~ 720 minutes"
+msgstr "允许值：0 ~ 720 分钟"
+
+msgid "(minutes)"
+msgstr "(分钟)"
