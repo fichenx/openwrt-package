@@ -1,0 +1,40 @@
+--- a/luci-app-passwall/Makefile
++++ b/luci-app-passwall/Makefile
+@@ -93,7 +93,6 @@
+ config PACKAGE_$(PKG_NAME)_INCLUDE_Geoview
+
+ 	bool "Include Geoview"
+
+ 	select PACKAGE_geoview
+
+-	default y if aarch64||arm||i386||x86_64
+
+ 
+
+ config PACKAGE_$(PKG_NAME)_INCLUDE_Haproxy
+
+ 	bool "Include Haproxy"
+
+@@ -112,11 +111,9 @@
+ 
+
+ config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Libev_Client
+
+ 	bool "Include Shadowsocks Libev Client"
+
+-	default y
+
+ 
+
+ config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Libev_Server
+
+ 	bool "Include Shadowsocks Libev Server"
+
+-	default y if aarch64||arm||i386||x86_64
+
+ 
+
+ config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Client
+
+ 	bool "Include Shadowsocks Rust Client"
+
