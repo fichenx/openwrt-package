@@ -52,17 +52,17 @@
 1. 先cd进package目录，然后执行
 
 ```bash
- git clone -b js https://github.com/fichenx/openwrt-package
+ git clone -b lua https://github.com/fichenx/openwrt-package
 ```
 2. 或者添加下面代码到feeds.conf.default文件
 
 ```bash
- src-git fichenx https://github.com/fichenx/openwrt-package;js
+ src-git fichenx https://github.com/fichenx/openwrt-package;lua
 ```
 3. lede/下运行 或者openwrt/下运行
 
 ```bash
-git clone -b js https://github.com/fichenx/openwrt-package package/openwrt-package
+git clone -b lua https://github.com/fichenx/openwrt-package package/openwrt-package
 ```
 
 

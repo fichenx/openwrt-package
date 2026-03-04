@@ -31,11 +31,14 @@ echo "========================="
 
 ###########自定义部分##################
 git_sparse_clone master https://github.com/Hyy2001X/AutoBuild-Packages luci-app-npc
-#git clone --depth 1 https://github.com/Leo-Jo-My/luci-theme-opentomcat
+rm -rf luci-app-filebrowser filebrowser
+git_sparse_clone main https://github.com/Lienol/openwrt-package luci-app-filebrowser
+git clone --depth 1 https://github.com/Leo-Jo-My/luci-theme-opentomcat
 git clone --depth 1 https://github.com/Leo-Jo-My/luci-theme-opentomato
 rm -rf luci-app-wechatpush
-git clone -b master https://github.com/tty228/luci-app-wechatpush luci-app-wechatpush
+git clone -b openwrt-18.06 https://github.com/tty228/luci-app-wechatpush luci-app-serverchan
 
+git clone -b main https://github.com/padavanonly/luci-app-mwan3helper-chinaroute luci-app-mwan3helper-chinaroute
 
 
 #kenzok8/wall(将kenzok8自建常用的内核更改为breakings/OpenWrt/blob/main/diy-part2.sh中的源，只添加breakings中有的源)
@@ -70,16 +73,15 @@ git clone --depth 1 https://github.com/sirpdboy/luci-app-ddns-go ddnsgo && mv -n
 
 
 #####luci-theme-design#####
-git_sparse_clone js https://github.com/fichenx/packages luci-theme-design
-#git_sparse_clone main https://github.com/fichenx/packages luci-app-design-config
-#git_sparse_clone openwrt-23.05 https://github.com/coolsnowwolf/luci themes/luci-theme-design
+git_sparse_clone main https://github.com/fichenx/packages luci-theme-design
+git_sparse_clone main https://github.com/fichenx/packages luci-app-design-config
 
 #####luci-app-watchcat-plus#####
-#git_sparse_clone main https://github.com/fichenx/packages luci-app-watchcat-plus
+git_sparse_clone main https://github.com/fichenx/packages luci-app-watchcat-plus
 
 #####bypass依赖#####
-#git_sparse_clone main https://github.com/fichenx/packages luci-app-bypass
-#git_sparse_clone master https://github.com/fw876/helloworld shadowsocksr-libev redsocks2 lua-neturl dns2tcp
+git_sparse_clone main https://github.com/fichenx/packages luci-app-bypass
+git_sparse_clone master https://github.com/fw876/helloworld shadowsocksr-libev redsocks2 lua-neturl dns2tcp
 
 #####luci-app-v2raya依赖#####
 git_sparse_clone master https://github.com/v2rayA/v2raya-openwrt v2raya
@@ -89,7 +91,7 @@ rm -rf luci-app-lucky lucky
 git_sparse_clone main https://github.com/gdy666/luci-app-lucky luci-app-lucky lucky
 
 #####luci-app-vssr#####
-#git clone -b master https://github.com/MilesPoupart/luci-app-vssr luci-app-vssr
+git clone -b master https://github.com/MilesPoupart/luci-app-vssr luci-app-vssr
 
 #####luci-app-socat#####
 rm -rf luci-app-socat
@@ -97,7 +99,7 @@ git_sparse_clone main https://github.com/chenmozhijin/luci-app-socat luci-app-so
 
 #####luci-app-mosdns mosdns v2dat#####
 rm -rf luci-app-mosdns mosdns v2dat
-git_sparse_clone v5 https://github.com/sbwml/luci-app-mosdns luci-app-mosdns mosdns v2dat 
+git_sparse_clone v5-lua https://github.com/sbwml/luci-app-mosdns luci-app-mosdns mosdns v2dat 
 
 #####luci-app-ikoolproxy#####
 rm -rf luci-app-ikoolproxy luci-app-godproxy
@@ -113,7 +115,7 @@ git_sparse_clone master https://github.com/x-wrt/com.x-wrt urllogger
 git_sparse_clone master https://github.com/fw876/helloworld tuic-client shadow-tls
 
 #####n3n#####
-#git_sparse_clone main https://github.com/fichenx/packages n3n
+git_sparse_clone main https://github.com/fichenx/packages n3n
 
 #####rtp2httpd#####
 git_sparse_clone main https://github.com/stackia/rtp2httpd openwrt-support/luci-app-rtp2httpd openwrt-support/rtp2httpd
@@ -132,14 +134,19 @@ git clone --depth 1 https://github.com/yichya/openwrt-xray-geodata-cut
 git_sparse_clone master https://github.com/sirpdboy/luci-app-taskplan luci-app-taskplan
 
 #####luci-app-netspeedtest 网速测试lua版#####
-#git_sparse_clone lua https://github.com/sirpdboy/luci-app-netspeedtest luci-app-netspeedtest homebox
+git_sparse_clone lua https://github.com/sirpdboy/luci-app-netspeedtest luci-app-netspeedtest homebox
 
 #####luci-app-parentcontrol 专为手机用户制作：家长控制 ，可以按时间控制机器，端口和关键字过滤等。#####
 git clone --depth 1 https://github.com/sirpdboy/luci-app-parentcontrol
 
-#####删除lua版ipk,替换为js版本#####
-rm -rf luci-app-timecontrol
-git_sparse_clone js https://github.com/gaobin89/luci-app-timecontrol luci-app-timecontrol
+#####删除kenzok8/small-package中的js版luci-app，替换为18.06版
+rm -rf luci-theme-argon luci-app-argon-config luci-theme-kucat
+git clone --depth 1 -b 18.06 https://github.com/jerrykuku/luci-theme-argon
+git clone --depth 1 -b 18.06 https://github.com/jerrykuku/luci-app-argon-config
+git clone --depth 1 https://github.com/sirpdboy/luci-theme-kucat -b 18.06 --depth 1
+
+#####删除kenzok8/small-package中的js版luci-app，无替换版本
+rm -rf luci-app-homeproxy
 
 #####shadowsocks-libev (ss-local ss-redir ss-tunnel ss-server)#####
 git_sparse_clone master https://github.com/fw876/helloworld shadowsocks-libev
@@ -213,7 +220,9 @@ git_sparse_clone master https://github.com/coolsnowwolf/packages utils/runc
 #修复naiveproxy
 sed -i 's|d2b41880a40e204ebe91baaf8202d0d1f3004b5335266afa426c680f2f0a909e|a4b34126901ad577a018332dd8cfa015ca5de1dcbbcf445465fb5a89a29a6b29|g' naiveproxy/Makefile
 
-
+#####删除luci-app-timecontrol替换为gaobin89版本#####
+rm -rf luci-app-timecontrol
+git clone --depth 1 -b lua https://github.com/gaobin89/luci-app-timecontrol
 
 
 ######################################
