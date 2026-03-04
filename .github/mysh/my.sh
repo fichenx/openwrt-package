@@ -136,7 +136,7 @@ git_sparse_clone main https://github.com/lmq8267/luci-app-vnt luci-app-vnt
 git clone --depth 1 https://github.com/yichya/openwrt-xray-geodata-cut
 
 #####luci-app-taskplan 任务设置2.0版#####
-git_sparse_clone master https://github.com/sirpdboy/luci-app-taskplan luci-app-taskplan
+git_sparse_clone main https://github.com/sirpdboy/luci-app-taskplan luci-app-taskplan
 
 #####luci-app-netspeedtest 网速测试lua版#####
 git_sparse_clone lua https://github.com/sirpdboy/luci-app-netspeedtest luci-app-netspeedtest homebox
