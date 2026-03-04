@@ -10,6 +10,7 @@ function git_sparse_clone() {
   git clone -b $branch --depth 1 --filter=blob:none --sparse $rurl temp_sparse || {
     echo "克隆仓库失败：$rurl"
     return 1
+  }  
   cd temp_sparse || {
     echo "进入目录失败：temp_sparse"
     return 1
@@ -22,7 +23,7 @@ function git_sparse_clone() {
   mv -f $@ ../
   cd ..
   rm -rf temp_sparse
-  }
+}
  
 function mvdir() {
 mv -n `find $1/* -maxdepth 0 -type d` ./
