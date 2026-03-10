@@ -235,6 +235,12 @@ function renderListeners(s, uciconfig, isClient) {
 	o.depends('type', 'mieru');
 	o.modalonly = true;
 
+	o = s.taboption('field_general', form.Value, 'mieru_traffic_pattern', _('Traffic pattern'),
+		_('A base64 string is used to fine-tune network behavior.<br/>Please refer to the <a target="_blank" href="%s" rel="noreferrer noopener">document</a>.')
+		.format('https://github.com/enfein/mieru/blob/main/docs/traffic-pattern.md'));
+	o.depends('type', 'mieru');
+	o.modalonly = true;
+
 	/* Sudoku fields */
 	const sudoku_keytypes = [
 		['sudoku-keypair', _('sudoku-keypair')],
@@ -381,10 +387,17 @@ function renderListeners(s, uciconfig, isClient) {
 	o.value('stream', _('split-stream') + ' - ' + _('CDN support'));
 	o.value('poll', _('poll') + ' - ' + _('CDN support'));
 	o.value('auto', _('Auto') + ' - ' + _('CDN support'));
+	o.value('ws', _('WebSocket') + ' - ' + _('CDN support'));
 	o.depends('sudoku_http_mask', '1');
 	o.modalonly = true;
 
 	o = s.taboption('field_general', form.Value, 'sudoku_path_root', _('HTTP root path'));
+	o.depends('sudoku_http_mask', '1');
+	o.modalonly = true;
+
+	o = s.taboption('field_general', form.Value, 'sudoku_fallback', _('Fallback'));
+	o.datatype = 'hostport';
+	o.placeholder = '127.0.0.1:80';
 	o.depends('sudoku_http_mask', '1');
 	o.modalonly = true;
 
