@@ -110,6 +110,10 @@ define Build/Prepare
 	sed -i '/rpc-secret/d' $(PKG_BUILD_DIR)/aria2.conf-master/*
 endef
 
+define Package/aria2/postinst
+#!/bin/sh
+[ -x /usr/share/aria2//tracker.sh ] && (cd /usr/share/aria2 && sh ./tracker.sh >/dev/null 2>&1 &) || exit 0
+endef
 
 define Package/aria2/install
 	$(INSTALL_DIR) $(1)/usr/bin
