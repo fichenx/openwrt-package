@@ -112,7 +112,7 @@ endef
 
 define Package/aria2/postinst
 #!/bin/sh
-[ -x /usr/share/aria2//tracker.sh ] && (cd /usr/share/aria2 && sh ./tracker.sh >/dev/null 2>&1 &) || exit 0
+[ -x $${IPKG_INSTROOT}/usr/share/aria2//tracker.sh ] && (cd $${IPKG_INSTROOT}/usr/share/aria2 && sh ./tracker.sh >/dev/null 2>&1 &) || exit 0
 endef
 
 define Package/aria2/install
