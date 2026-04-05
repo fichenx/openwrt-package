@@ -5,12 +5,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=trojan-go
-PKG_VERSION:=0.10.6
+PKG_VERSION:=0.10.13
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://codeload.github.com/p4gefau1t/trojan-go/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=925f02647dda944813f1eab0b71eac98b83eb5964ef5a6f63e89bc7eb4486c1f
+PKG_SOURCE_URL:=https://codeload.github.com/kenzok8/trojan-go/tar.gz/v$(PKG_VERSION)?
+PKG_HASH:=40296268e473fea8538464e4e55d1daaa6735ac396a9c02d17d988032dd79d99
 
 PKG_LICENSE:=GPL-3.0-only
 PKG_LICENSE_FILES:=LICENSE
@@ -37,7 +37,7 @@ define Package/trojan-go
   SUBMENU:=Web Servers/Proxies
   TITLE:=A Trojan proxy written in Go
   DEPENDS:=$(GO_ARCH_DEPENDS) +ca-bundle
-  URL:=https://p4gefau1t.github.io/trojan-go/
+  URL:=https://github.com/kenzok8/trojan-go
 endef
 
 define Package/trojan-go/description
