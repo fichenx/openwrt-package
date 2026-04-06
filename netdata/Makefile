@@ -8,17 +8,17 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=netdata
-PKG_VERSION:=2.3.2
+PKG_VERSION:=2.9.0
 PKG_RELEASE:=1
 
 PKG_MAINTAINER:=Josef Schlehofer <pepe.schlehofer@gmail.com>, Daniel Engberg <daniel.engberg.lists@pyret.net>
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_LICENSE_FILES:=COPYING
-PKG_CPE_ID:=cpe:/a:my-netdata:netdata
+PKG_CPE_ID:=cpe:/a:netdata:netdata
 
 PKG_SOURCE:=$(PKG_NAME)-v$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/netdata/netdata/releases/download/v$(PKG_VERSION)
-PKG_HASH:=f70d8f0e73e02378e8e72a5e90c69bf773c1f54f539bf3e1cc9936a58344c4d2
+PKG_HASH:=skip
 PKG_BUILD_DIR=$(BUILD_DIR)/$(PKG_NAME)-v$(PKG_VERSION)
 
 PKG_INSTALL:=1
@@ -26,7 +26,7 @@ PKG_BUILD_PARALLEL:=1
 PKG_FIXUP:=autoreconf
 PKG_BUILD_FLAGS:=no-mips16 gc-sections
 
-PKG_BUILD_DEPENDS:=protobuf/host golang/host
+PKG_BUILD_DEPENDS:=protobuf/host rust/host
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -65,9 +65,13 @@ CMAKE_OPTIONS += \
 	-DENABLE_EXPORTER_PROMETHEUS_REMOTE_WRITE=Off \
 	-DENABLE_EXPORTER_MONGODB=Off \
 	-DENABLE_H2O=Off \
-	-DENABLE_LIBBACKTRACE=Off \
+	-DENABLE_BACKTRACE=Off \
 	-DENABLE_LOGS_MANAGEMENT_TESTS=Off \
 	-DENABLE_ML=Off \
+	-DENABLE_NETDATA_JOURNAL_FILE_READER=Off \
+	-DENABLE_PLUGIN_OTEL=Off \
+	-DENABLE_PLUGIN_OTEL_SIGNAL_VIEWER=Off \
+	-DENABLE_PLUGIN_GO=Off \
 	-DENABLE_PLUGIN_APPS=Off \
 	-DENABLE_PLUGIN_CGROUP_NETWORK=Off \
 	-DENABLE_PLUGIN_CUPS=Off \
@@ -77,12 +81,25 @@ CMAKE_OPTIONS += \
 	-DENABLE_PLUGIN_LOGS_MANAGEMENT=Off \
 	-DENABLE_PLUGIN_NFACCT=Off \
 	-DENABLE_PLUGIN_SYSTEMD_JOURNAL=Off \
+	-DENABLE_PLUGIN_SYSTEMD_UNITS=Off \
 	-DENABLE_PLUGIN_XENSTAT=Off \
 	-DENABLE_WEBRTC=Off
 
 define Package/netdata/conffiles
 /etc/config/netdata
 /etc/netdata/
+endef
+
+define Download/netdata-dashboard
+  URL:=https://app.netdata.cloud
+  URL_FILE:=agent.tar.gz
+  FILE:=netdata-dashboard-agent.tar.gz
+  HASH:=skip
+endef
+
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	$(CP) $(DL_DIR)/netdata-dashboard-agent.tar.gz $(PKG_BUILD_DIR)/dashboard.tar.gz
 endef
 
 define Package/netdata/install
@@ -109,10 +126,9 @@ define Package/netdata/install
 	#netdata webdir and remove uneeded files
 	$(INSTALL_DIR) $(1)/usr/share/netdata
 	$(CP) $(PKG_INSTALL_DIR)/usr/share/netdata $(1)/usr/share
-	rm $(1)/usr/share/netdata/web/v3/3D_PARTY_LICENSES.txt
-	rm $(1)/usr/share/netdata/web/v3/LICENSE.md
-	rm $(1)/usr/share/netdata/web/v3/*.LICENSE.txt
-	rm -r $(1)/usr/share/netdata/web/static/*
+	$(CP) $(1)/usr/share/netdata/web/v3/* $(1)/usr/share/netdata/web/
+	rm -r $(1)/usr/share/netdata/web/v3/*
+	rm $(1)/usr/share/netdata/build-info-cmake-cache.gz
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/netdata.init $(1)/etc/init.d/netdata
 	$(INSTALL_DIR) $(1)/etc/config
@@ -120,8 +136,7 @@ define Package/netdata/install
 	$(INSTALL_DIR) $(1)/etc/nginx/conf.d
 	$(INSTALL_DATA) ./files/netdata.locations $(1)/etc/nginx/conf.d/netdata.locations
 	$(INSTALL_DATA) ./files/netdata.htpasswd  $(1)/etc/nginx/conf.d/netdata.htpasswd
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_DATA) ./files/netdata.uci-defaults $(1)/etc/uci-defaults/luci-netdata
 endef
 
+$(eval $(call Download,netdata-dashboard))
 $(eval $(call BuildPackage,netdata))
