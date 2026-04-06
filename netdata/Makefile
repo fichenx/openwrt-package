@@ -35,7 +35,7 @@ include $(INCLUDE_DIR)/nls.mk
 define Package/netdata
   SECTION:=admin
   CATEGORY:=Administration
-  DEPENDS:=+zlib +libuuid +libuv +libmnl +liblz4 +libjson-c +libyaml +libopenssl +libcurl +protobuf +libzstd +libpcre2
+  DEPENDS:=+zlib +libuuid +libuv +libmnl +liblz4 +libjson-c +libyaml +libopenssl +libcurl +protobuf +libzstd
   TITLE:=Real-time performance monitoring tool
   URL:=https://www.netdata.cloud/
   PROVIDES:=netdata-ssl
