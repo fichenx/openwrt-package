@@ -26,18 +26,16 @@ PKG_BUILD_PARALLEL:=1
 PKG_FIXUP:=autoreconf
 PKG_BUILD_FLAGS:=no-mips16 gc-sections
 
-PKG_BUILD_DEPENDS:=protobuf/host rust/host
+PKG_BUILD_DEPENDS:=protobuf/host
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 include $(INCLUDE_DIR)/nls.mk
-include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
-
 
 define Package/netdata
   SECTION:=admin
   CATEGORY:=Administration
-  DEPENDS:=+zlib +libuuid +libuv +libmnl +liblz4 +libjson-c +libyaml +libopenssl +libcurl +protobuf +libzstd +libpcre2
+  DEPENDS:=+zlib +libuuid +libuv +libmnl +liblz4 +libjson-c +libyaml +libopenssl +libcurl +protobuf +libzstd
   TITLE:=Real-time performance monitoring tool
   URL:=https://www.netdata.cloud/
   PROVIDES:=netdata-ssl
