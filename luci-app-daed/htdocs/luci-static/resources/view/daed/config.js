@@ -39,13 +39,13 @@ function renderStatus(isRunning, port) {
 }
 
 return view.extend({
-	load: function() {
+	load() {
 		return Promise.all([
 			uci.load('daed')
 		]);
 	},
 
-	render: function(data) {
+	render(data) {
 		let m, s, o;
 		let webport = (uci.get(data[0], 'config', 'address') || '0.0.0.0:2023').split(':').slice(-1)[0];
 
