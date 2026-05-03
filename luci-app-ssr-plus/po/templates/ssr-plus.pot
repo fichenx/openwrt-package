@@ -191,6 +191,15 @@ msgstr ""
 msgid "Unsupported component"
 msgstr ""
 
+msgid "Missing xz support"
+msgstr ""
+
+msgid "naive binary not found in archive"
+msgstr ""
+
+msgid "The online upgrade tracks the latest NaiveProxy release and prefers OpenWrt static archives matching the current ARCH before falling back to other release assets."
+msgstr ""
+
 #: applications/luci-app-ssr-plus/luasrc/model/cbi/shadowsocksr/control.lua:39
 msgid "Allow all except listed"
 msgstr ""
@@ -1761,6 +1770,9 @@ msgstr ""
 msgid "Reload YAML"
 msgstr ""
 
+msgid "Custom Client Proxies Rules"
+msgstr ""
+
 msgid "Reloading YAML..."
 msgstr ""
 
@@ -1786,6 +1798,69 @@ msgid "Defaults Cleared!"
 msgstr ""
 
 msgid "Reset Defaults Failed!"
+msgstr ""
+
+msgid "No custom client proxy rules yet."
+msgstr ""
+
+msgid "Client"
+msgstr ""
+
+msgid "Policy"
+msgstr ""
+
+msgid "Remarks"
+msgstr ""
+
+msgid "Saving..."
+msgstr ""
+
+msgid "Custom client proxy rules saved and applied."
+msgstr ""
+
+msgid "Custom client proxy rules saved."
+msgstr ""
+
+msgid "Failed to save custom client proxy rules."
+msgstr ""
+
+msgid "Define per-client Mihomo proxy targets. Rules are injected as SRC-IP-CIDR entries before the original Clash rules."
+msgstr ""
+
+msgid "Client supports manual IP or IP/CIDR input."
+msgstr ""
+
+msgid "Export Client Rules"
+msgstr ""
+
+msgid "Import Client Rules"
+msgstr ""
+
+msgid "Client rules exported to CSV text."
+msgstr ""
+
+msgid "Client rules imported from CSV text. Click Save to apply."
+msgstr ""
+
+msgid "Client rules exported to CSV file."
+msgstr ""
+
+msgid "Client rules imported from CSV file. Click Save to apply."
+msgstr ""
+
+msgid "Clear All Rules"
+msgstr ""
+
+msgid "Clear all custom client proxy rules and restore empty state?"
+msgstr ""
+
+msgid "All client proxy rules cleared and applied."
+msgstr ""
+
+msgid "All client proxy rules cleared."
+msgstr ""
+
+msgid "Failed to clear all client proxy rules."
 msgstr ""
 
 #: applications/luci-app-ssr-plus/luasrc/model/cbi/shadowsocksr/servers.lua:134
