@@ -346,9 +346,6 @@ end
 if is_finded("mihomo") then
 	o:value("tuic", translate("TUIC"))
 end
-if is_finded("ipt2socks") then
-	o:value("socks5", translate("Socks5"))
-end
 local old_cfgvalue = o.cfgvalue
 o.cfgvalue = function(self, section)
 	local val = self.map.uci:get("shadowsocksr", section, "type")
