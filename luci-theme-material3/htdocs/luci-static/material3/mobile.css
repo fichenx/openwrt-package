@@ -311,11 +311,6 @@ body[data-page="admin-status-overview"] .cbi-title .label::before {
 		flex-basis: 33%;
 	}
 
-	[data-page="admin-status-overview"] .table {
-		margin: 4px;
-		width: calc(100% - 8px);
-	}
-
 	[data-page="admin-status-overview"] .table,
 	[data-page="admin-status-overview"] .tr,
 	[data-page="admin-status-overview"] .td,

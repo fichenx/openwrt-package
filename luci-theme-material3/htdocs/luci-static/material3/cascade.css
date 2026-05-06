@@ -4497,14 +4497,6 @@ body[data-page="admin-status-overview"] .cbi-section {
 	border-radius: 0;
 }
 
-body[data-page="admin-status-overview"] .cbi-section>.cbi-title+div {
-	margin: 1px;
-	width: calc(100% - 2px);
-	border-radius: 0;
-	background: transparent;
-	box-shadow: none;
-}
-
 body[data-page="admin-status-overview"] :is(.cbi-section-descr,
 	.cbi-map-descr,
 	.cbi-section p,
@@ -4561,28 +4553,27 @@ body[data-page="admin-status-overview"] .cbi-title .label.notice::before {
 }
 
 body[data-page="admin-status-overview"] .network-status-table {
-	width: calc(100% + 16px);
-	margin: 0 -8px 8px;
+	gap: 10px;
+	margin: 0 0 10px;
 }
 
 body[data-page="admin-status-overview"] .network-status-table .ifacebox {
-	margin: 8px;
-	width: calc(100% - 16px);
+	flex: 1 1 260px;
+	margin: 0;
 	padding: 8px;
-	border: 0;
-	border-radius: var(--material3-card-radius);
-	background: var(--material3-card-background);
-	box-shadow: var(--material3-card-shadow);
+	text-align: left;
+	white-space: normal;
 }
 
 body[data-page="admin-status-overview"] .ifacebox .ifacebox-head {
 	padding: 2px 0 8px;
 	border: 0;
-	border-radius: 16px 16px 0 0;
-	background: transparent;
+	border-radius: 0;
+	background: transparent !important;
 	color: var(--on-surface-variant);
 	font-weight: 400;
 	opacity: .9;
+	text-shadow: none;
 }
 
 body[data-page="admin-status-overview"] .ifacebox .ifacebox-head strong {
@@ -4591,7 +4582,7 @@ body[data-page="admin-status-overview"] .ifacebox .ifacebox-head strong {
 
 body[data-page="admin-status-overview"] .ifacebox .ifacebox-head.active {
 	border: 0;
-	background: transparent;
+	background: transparent !important;
 	color: var(--on-surface);
 	text-shadow: none;
 }
@@ -4612,12 +4603,9 @@ body[data-page="admin-status-overview"] .network-status-table .ifacebox-body .if
 	text-shadow: none;
 }
 
-body[data-page="admin-status-overview"] .table {
-	margin: 1px;
-}
-
 /* Dashboard cards */
-:is(body[data-page="admin-dashboard"], body[data-page="admin"], body[data-page=""]) .Dashboard .dashboard-bg.box-s1 {
+:is(body[data-page="admin-dashboard"], body[data-page="admin"], body[data-page=""]) .Dashboard .dashboard-bg.box-s1,
+body[data-page="admin-status-overview"] .network-status-table .ifacebox {
 	border: 0;
 	border-radius: var(--material3-card-radius);
 	background: var(--material3-card-background);
