@@ -1,0 +1,59 @@
+#!/bin/sh
+# Migration script for fchomo node
+# Used to migrate LuCI application nodes option.
+
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+
+CONF=fchomo
+
+config_load "$CONF"
+
+# isDefined <section> <option>
+isDefined() {
+	local opt=CONFIG_${1}_${2};
+
+	eval "[ -n \"\${$opt+x}\" ] && return 0 || return 1"
+}
+
+migrate() {
+	# mieru_port_range -> mieru_ports
+	if isDefined "$1" mieru_port_range; then
+		local mieru_port_range
+		config_get mieru_port_range "$1" mieru_port_range ""
+		uci_remove "$CONF" "$1" mieru_port_range
+		uci_add_list "$CONF" "$1" mieru_ports "$mieru_port_range"
+	fi
+
+	# vless_encryption -> vless_encryption_encryption
+	if isDefined "$1" vless_encryption; then
+		local vless_encryption
+		config_get vless_encryption "$1" vless_encryption "0"
+		if [ "$vless_encryption" != "1" -a "$vless_encryption" != "0" ]; then
+			uci_set "$CONF" "$1" vless_encryption "1"
+			uci_set "$CONF" "$1" vless_encryption_encryption "$vless_encryption"
+		fi
+	fi
+
+	# tuic_congestion_controller -> congestion_controller
+	if isDefined "$1" tuic_congestion_controller; then
+		local tuic_congestion_controller
+		config_get tuic_congestion_controller "$1" tuic_congestion_controller ""
+		uci_remove "$CONF" "$1" tuic_congestion_controller
+		uci_set "$CONF" "$1" congestion_controller "$tuic_congestion_controller"
+	fi
+
+	# masque_congestion_controller -> congestion_controller
+	if isDefined "$1" masque_congestion_controller; then
+		local masque_congestion_controller
+		config_get masque_congestion_controller "$1" masque_congestion_controller ""
+		uci_remove "$CONF" "$1" masque_congestion_controller
+		uci_set "$CONF" "$1" congestion_controller "$masque_congestion_controller"
+	fi
+}
+
+config_foreach migrate node
+
+uci_commit "$CONF"
+
+exit 0

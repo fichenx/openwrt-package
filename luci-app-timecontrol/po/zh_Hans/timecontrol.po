@@ -1,0 +1,168 @@
+msgid ""
+msgstr ""
+
+"Content-Type: text/plain; charset=UTF-8\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: zh_Hans\n"
+"MIME-Version: 1.0\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Control"
+msgstr "管控"
+
+msgid "Internet Time Control"
+msgstr "上网时间控制"
+
+msgid "Enable"
+msgstr "启用"
+
+msgid "Control Rules"
+msgstr "管控规则"
+
+msgid "Time Ranges"
+msgstr "禁网时段"
+
+msgid "Time Restrictions"
+msgstr "时间限制"
+
+msgid "AnyDay"
+msgstr "每天"
+
+msgid "Monday"
+msgstr "星期一"
+
+msgid "Tuesday"
+msgstr "星期二"
+
+msgid "Wednesday"
+msgstr "星期三"
+
+msgid "Thursday"
+msgstr "星期四"
+
+msgid "Friday"
+msgstr "星期五"
+
+msgid "Saturday"
+msgstr "星期六"
+
+msgid "Sunday"
+msgstr "星期日"
+
+msgid "Week Days"
+msgstr "星期"
+
+msgid "Control Enabled"
+msgstr "管控已开启"
+
+msgid "Control Disabled"
+msgstr "管控已禁用"
+
+msgid "Invalid time range"
+msgstr "时段无效"
+
+msgid "Users can limit Internet usage time by MAC address, support iptables/nftables IPv4/IPv6"
+msgstr "用户可以通过 MAC 地址限制互联网使用时间，支持 iptables/nftables IPv4/IPv6"
+
+msgid "Temporary Unblock"
+msgstr "临时解禁"
+
+msgid "Temporary Block"
+msgstr "临时封禁"
+
+msgid "Temporary Unblock/Block"
+msgstr "临时解/封禁"
+
+msgid "(minutes)"
+msgstr "(分钟)"
+
+msgid "Unnamed rule"
+msgstr "未命名规则"
+
+msgid "Client MAC"
+msgstr "客户端 MAC"
+
+msgid "AllClients"
+msgstr "所有客户端"
+
+msgid "AnyTime"
+msgstr "所有时段"
+
+msgid "Collecting data ..."
+msgstr "收集数据中 ..."
+
+msgid "Global Settings"
+msgstr "全局设置"
+
+msgid "Quick Settings"
+msgstr "快速设置"
+
+msgid "Suggestion and feedback"
+msgstr "建议与反馈"
+
+msgid "Set unblock duration for all rules"
+msgstr "为所有规则设置临时解禁时间"
+
+msgid "Set block duration for all rules"
+msgstr "为所有规则设置临时封禁时间"
+
+msgid "Example"
+msgstr "例如"
+
+msgid "Time ranges overlap"
+msgstr "时间范围重叠"
+
+msgid "Available Duration"
+msgstr "可用时长"
+
+msgid "Tips"
+msgstr "提示"
+
+msgid "Control Type"
+msgstr "管控类型"
+
+msgid "Set control type to blacklist or whitelist"
+msgstr "设置管控类型为黑名单或白名单"
+
+msgid "Blacklist"
+msgstr "黑名单"
+
+msgid "Blocks network access only from blacklisted addresses"
+msgstr "仅阻止来自黑名单地址的网络访问"
+
+msgid "Whitelist"
+msgstr "白名单"
+
+msgid "Allow network access only from whitelisted addresses, for more settings go to \"Interface Restrictions\" tab"
+msgstr "仅允许来自白名单地址的网络访问，更多设置请转到“接口限制”选项卡"
+
+msgid "Reject Interface"
+msgstr "拒绝接口"
+
+msgid "The interface is only rejected in whitelist mode, unspecified means reject all interfaces"
+msgstr "仅在白名单模式下拒绝指定接口，未指定则拒绝所有接口"
+
+msgid "Temporary Control"
+msgstr "临时管控"
+
+msgid "Temporary Duration"
+msgstr "临时时长"
+
+msgid "Other Settings"
+msgstr "其它设置"
+
+msgid "When the temporary duration timer ends, it will automatically take effect according to the original rules"
+msgstr "当临时时长计时结束后，自动按原规则生效"
+
+msgid "Interface Restrictions"
+msgstr "接口限制"
+
+msgid "Please add at least one rule first"
+msgstr "请先至少添加一条规则"
+
+msgid "Set temporary block duration for all rules successfully"
+msgstr "为所有规则设置临时封禁时间成功"
+
+msgid "Set temporary unblock duration for all rules successfully"
+msgstr "为所有规则设置临时解封时间成功"
