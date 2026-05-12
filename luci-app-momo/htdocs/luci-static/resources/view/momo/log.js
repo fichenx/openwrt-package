@@ -24,7 +24,31 @@ return view.extend({
 
         m = new form.Map('momo');
 
-        s = m.section(form.NamedSection, 'placeholder', 'placeholder', _('Log'));
+        s = m.section(form.NamedSection, 'log', 'log', _('Log'));
+
+        s.tab('log_config', _('Log Config'));
+        
+        o = s.taboption('log_config', form.Flag, 'scheduled_clear', _('Scheduled Clear'));
+        o.rmempty = false;
+        
+        o = s.taboption('log_config', form.Value, 'scheduled_clear_cron', _('Scheduled Clear Cron'));
+        o.retain = true;
+        o.rmempty = false;
+        o.depends('scheduled_clear', '1');
+
+        o = s.taboption('log_config', form.Value, 'scheduled_clear_size_limit', _('Scheduled Clear Size Limit'));
+        o.retain = true;
+        o.rmempty = false;
+        o.datatype = 'uinteger';
+        o.depends('scheduled_clear', '1');
+
+        o = s.taboption('log_config', form.ListValue, 'scheduled_clear_size_limit_unit', _('Scheduled Clear Size Limit Unit'));
+        o.retain = true;
+        o.rmempty = false;
+        o.depends('scheduled_clear', '1');
+        o.value('KB', 'KB');
+        o.value('MB', 'MB');
+        o.value('GB', 'GB');
 
         s.tab('app_log', _('App Log'));
 
@@ -48,7 +72,7 @@ return view.extend({
         poll.add(L.bind(function () {
             const option = this;
             return L.resolveDefault(momo.getAppLog()).then(function (log) {
-                option.getUIElement('placeholder').setValue(log);
+                option.getUIElement('log').setValue(log);
             });
         }, o));
 
@@ -81,7 +105,7 @@ return view.extend({
         poll.add(L.bind(function () {
             const option = this;
             return L.resolveDefault(momo.getCoreLog()).then(function (log) {
-                option.getUIElement('placeholder').setValue(log);
+                option.getUIElement('log').setValue(log);
             });
         }, o));
 
@@ -119,8 +143,5 @@ return view.extend({
         };
 
         return m.render();
-    },
-    handleSaveApply: null,
-    handleSave: null,
-    handleReset: null
+    }
 });

@@ -506,7 +506,7 @@ uci.foreach(uciconf, ucinode, (cfg) => {
 
 		/* Hysteria / Hysteria2 */
 		ports: isEmpty(cfg.hysteria_ports) ? null : join(',', cfg.hysteria_ports),
-		"hop-interval": strToInt(cfg.hysteria_hop_interval),
+		"hop-interval": strToInt(cfg.hysteria_hop_interval), // @DEBUG ERROR data type *utils.IntRanges[uint16]
 		up: cfg.hysteria_up_mbps ? cfg.hysteria_up_mbps + ' Mbps' : null,
 		down: cfg.hysteria_down_mbps ? cfg.hysteria_down_mbps + ' Mbps' : null,
 		obfs: cfg.hysteria_obfs_type,
@@ -608,6 +608,7 @@ uci.foreach(uciconf, ucinode, (cfg) => {
 
 		/* Extra fields */
 		"congestion-controller": cfg.congestion_controller,
+		"bbr-profile": cfg.bbr_profile,
 		udp: strToBool(cfg.udp),
 		"udp-over-tcp": strToBool(cfg.uot),
 		"udp-over-tcp-version": cfg.uot_version,
@@ -649,7 +650,10 @@ uci.foreach(uciconf, ucinode, (cfg) => {
 			"grpc-opts": cfg.transport_type === 'grpc' ? {
 				"grpc-service-name": cfg.transport_grpc_servicename,
 				"grpc-user-agent": cfg.transport_grpc_user_agent,
-				"ping-interval": strToInt(cfg.transport_grpc_ping_interval) || null
+				"ping-interval": strToInt(cfg.transport_grpc_ping_interval) || null,
+				"max-connections": strToInt(cfg.smux_max_connections) || null,
+				"min-streams": strToInt(cfg.smux_min_streams) || null,
+				"max-streams": strToInt(cfg.smux_max_streams) || null,
 			} : null,
 			"ws-opts": cfg.transport_type === 'ws' ? {
 				path: cfg.transport_path || '/',
@@ -665,11 +669,27 @@ uci.foreach(uciconf, ucinode, (cfg) => {
 				headers: cfg.transport_http_headers ? json(cfg.transport_http_headers) : null,
 				mode: cfg.transport_xhttp_mode,
 				"no-grpc-header": strToBool(cfg.transport_xhttp_no_grpc_header),
-				"x-padding-bytes": cfg.transport_xhttp_x_padding_bytes
+				"x-padding-bytes": cfg.transport_xhttp_x_padding_bytes,
+				// @bypassing CDN's potential detection /* https://github.com/MetaCubeX/mihomo/commit/2337d70d86fa15efe7b69ee54bff6139ebfabcf6 */
+				"sc-max-each-post-bytes": strToInt(cfg.transport_xhttp_sc_max_each_post_bytes) || null,
+				"sc-min-posts-interval-ms": strToInt(cfg.transport_xhttp_sc_min_posts_interval_ms) || null,
+				"reuse-settings": cfg.transport_xhttp_xmux ? {
+					"max-concurrency": cfg.transport_xhttp_xmux_max_concurrency,
+					"max-connections": cfg.transport_xhttp_xmux_max_connections,
+					"c-max-reuse-times": cfg.transport_xhttp_xmux_max_reuse_times,
+					"h-max-request-times": cfg.transport_xhttp_xmux_max_request_times,
+					"h-max-reusable-secs": cfg.transport_xhttp_xmux_max_reusable_secs,
+					"h-keep-alive-period": strToInt(cfg.transport_xhttp_xmux_keep_alive_period)
+				} : null
 			} : null
 		} : {}),
 
 		/* Multiplex fields */
+		...(cfg.type in ['trusttunnel'] ? {
+			"max-connections": strToInt(cfg.smux_max_connections) || null,
+			"min-streams": strToInt(cfg.smux_min_streams) || null,
+			"max-streams": strToInt(cfg.smux_max_streams) || null
+		} : {}),
 		smux: cfg.smux_enabled === '1' ? {
 			enabled: true,
 			protocol: cfg.smux_protocol,
@@ -766,11 +786,11 @@ uci.foreach(uciconf, uciprov, (cfg) => {
 				// Configuration Items
 				tfo: strToBool(cfg.override_tfo),
 				mptcp: strToBool(cfg.override_mptcp),
-				udp: (cfg.override_udp === '0') ? false : true,
+				udp: (cfg.override_udp === '0') ? null : true,
 				"udp-over-tcp": strToBool(cfg.override_uot),
 				up: cfg.override_up ? cfg.override_up + ' Mbps' : null,
 				down: cfg.override_down ? cfg.override_down + ' Mbps' : null,
-				"skip-cert-verify": strToBool(cfg.override_skip_cert_verify) || false,
+				"skip-cert-verify": cfg.override_skip_cert_verify ? strToBool(cfg.override_skip_cert_verify) || false : null,
 				"dialer-proxy": dialerproxy[cfg['.name']]?.detour,
 				"interface-name": cfg.override_interface_name,
 				"routing-mark": strToInt(cfg.override_routing_mark) || null,

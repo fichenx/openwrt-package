@@ -3,7 +3,6 @@ local uci = api.uci
 local appname = "passwall"
 local has_ss = api.is_finded("ss-redir")
 local has_ss_rust = api.is_finded("sslocal")
-local has_trojan_plus = api.is_finded("trojan-plus")
 local has_singbox = api.finded_com("sing-box")
 local has_xray = api.finded_com("xray")
 local has_hysteria2 = api.finded_com("hysteria")
@@ -20,10 +19,6 @@ end
 if has_ss_rust then
 	local s = "shadowsocks-rust"
 	table.insert(ss_type, s)
-end
-if has_trojan_plus then
-	local s = "trojan-plus"
-	table.insert(trojan_type, s)
 end
 if has_singbox then
 	local s = "sing-box"
@@ -119,14 +114,6 @@ if #ss_type > 0 or #trojan_type > 0 or #vmess_type > 0 or #vless_type > 0 or #hy
 	o.description = string.format("<font color='red'>%s</font>",
 			translate("The configured type also applies to the core specified when manually importing nodes."))
 end
-
-o = s:option(ListValue, "domain_strategy", "Sing-box " .. translate("Domain Strategy"), translate("Set the default domain resolution strategy for the sing-box node."))
-o.default = ""
-o:value("", translate("Auto"))
-o:value("prefer_ipv4", translate("Prefer IPv4"))
-o:value("prefer_ipv6", translate("Prefer IPv6"))
-o:value("ipv4_only", translate("IPv4 Only"))
-o:value("ipv6_only", translate("IPv6 Only"))
 
 ---- Subscribe Delete All
 o = s:option(DummyValue, "_stop", translate("Delete All Subscribe Node"))

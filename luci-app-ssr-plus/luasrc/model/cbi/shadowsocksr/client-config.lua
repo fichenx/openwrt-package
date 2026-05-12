@@ -5,6 +5,7 @@ require "nixio.fs"
 require "luci.sys"
 require "luci.http"
 require "luci.jsonc"
+local nixio = require "nixio"
 require "luci.model.uci"
 local uci = require "luci.model.uci".cursor()
 
@@ -19,7 +20,7 @@ local xray_version_val = 0
 
 -- 确保正确判断程序是否存在
 local function is_finded(e)
-	return luci.sys.exec(string.format('type -t -p "%s" 2>/dev/null', e)) ~= ""
+	return luci.sys.exec(string.format('type -t -p "%s" -p "/usr/libexec/%s" 2>/dev/null', e, e)) ~= ""
 end
 
 local function is_installed(e)
@@ -146,11 +147,9 @@ local function set_apply_on_parse(map)
 	end
 end
 
-local has_xray = is_finded("xray")
-local has_hysteria2 = is_finded("hysteria")
-
 local has_ss_rust = is_finded("sslocal") or is_finded("ssserver")
-local has_ss_libev = is_finded("ss-redir") or is_finded("ss-local")
+local has_mihomo = is_finded("mihomo")
+local has_xray = is_finded("xray")
 
 local server_table = {}
 local encrypt_methods = {
@@ -255,6 +254,59 @@ local tls_flows = {
 	"none"
 }
 
+local function migrate_xray_protocol_nodes()
+	local changed = false
+
+	uci:foreach("shadowsocksr", "servers", function(section)
+		if section.type == "ss" or section.type == "ss-libev" then
+			if has_mihomo then
+				uci:set("shadowsocksr", section[".name"], "type", "ss")
+				changed = true
+			elseif has_ss_rust then
+				uci:set("shadowsocksr", section[".name"], "type", "ss-rust")
+				changed = true
+			elseif has_xray then
+				uci:set("shadowsocksr", section[".name"], "type", "v2ray")
+				uci:set("shadowsocksr", section[".name"], "v2ray_protocol", "shadowsocks")
+				changed = true
+			end
+		elseif section.type == "v2ray" and section.v2ray_protocol == "shadowsocks" and has_mihomo then
+			uci:set("shadowsocksr", section[".name"], "type", "ss")
+			uci:delete("shadowsocksr", section[".name"], "v2ray_protocol")
+			changed = true
+		end
+		if section.type == "hysteria2" then
+			uci:set("shadowsocksr", section[".name"], "type", "v2ray")
+			uci:set("shadowsocksr", section[".name"], "v2ray_protocol", "hysteria2")
+			changed = true
+		elseif section.type == "trojan" then
+			uci:set("shadowsocksr", section[".name"], "type", "v2ray")
+			uci:set("shadowsocksr", section[".name"], "v2ray_protocol", "trojan")
+			changed = true
+		end
+	end)
+
+	local subscribe_sid = uci:get_first("shadowsocksr", "server_subscribe")
+	if subscribe_sid and uci:get("shadowsocksr", subscribe_sid, "xray_hy2_type") then
+		uci:delete("shadowsocksr", subscribe_sid, "xray_hy2_type")
+		changed = true
+	end
+	if subscribe_sid and uci:get("shadowsocksr", subscribe_sid, "xray_tj_type") then
+		uci:delete("shadowsocksr", subscribe_sid, "xray_tj_type")
+		changed = true
+	end
+	if subscribe_sid and uci:get("shadowsocksr", subscribe_sid, "ss_type") then
+		uci:delete("shadowsocksr", subscribe_sid, "ss_type")
+		changed = true
+	end
+
+	if changed then
+		uci:commit("shadowsocksr")
+	end
+end
+
+migrate_xray_protocol_nodes()
+
 m = Map("shadowsocksr", translate("Edit ShadowSocksR Server"))
 m.redirect = url("servers")
 if not sid or m.uci:get("shadowsocksr", sid) ~= "servers" then
@@ -263,6 +315,14 @@ if not sid or m.uci:get("shadowsocksr", sid) ~= "servers" then
 end
 -- 保存&应用成功后跳转到节点列表
 set_apply_on_parse(m)
+local old_after_save = m.on_after_save
+m.on_after_save = function(self)
+	if old_after_save then old_after_save(self) end
+	local node_type = self.uci:get("shadowsocksr", sid, "type")
+	if node_type == "clash" then
+		luci.sys.call(string.format("/etc/init.d/shadowsocksr clash_cache %s >/dev/null 2>&1 &", sid))
+	end
+end
 
 -- [[ Servers Setting ]]--
 s = m:section(NamedSection, sid, "servers")
@@ -274,50 +334,27 @@ o.rawhtml = true
 o.template = "shadowsocksr/ssrurl"
 o.value = sid
 
--- 新增一个选择框，用于选择 Xray 或 Hysteria2 核心
-o = s:option(ListValue, "_xray_hy2_type", string.format("<b><span style='color:red;'>%s</span></b>", translatef("%s Node Use Type", "Hysteria2")))
-o.description = translate("The configured type also applies to the core specified when manually importing nodes.")
--- 设置默认 Xray 或 Hysteria2 核心
--- 动态添加选项
-if has_xray then
-	o:value("v2ray", translate("Xray (Hysteria2)"))
-end
-if has_hysteria2 then
-	o:value("hysteria2", translate("Hysteria2"))
-end
--- 读取全局 xray_hy2_type
-o.cfgvalue = function(self, section)
-	return self.map.uci:get("shadowsocksr", "@server_subscribe[0]", "xray_hy2_type") or "hysteria2"
-end
-o.rmempty = true
-o.write = function(self, section, value)
-	-- 更新 server_subscribe 的 xray_hy2_type
-	local old_value = self.map.uci:get("shadowsocksr", "@server_subscribe[0]", "xray_hy2_type")
-	if old_value ~= value then
-		self.map.uci:set("shadowsocksr", "@server_subscribe[0]", "xray_hy2_type", value)
-	end
-end
-
+-- 新增一个选择框，用于选择 Xray 或 Trojan 核心
 o = s:option(ListValue, "type", translate("Server Node Type"))
-if is_finded("xray") or is_finded("v2ray") then
+if is_finded("xray") then
 	o:value("v2ray", translate("V2Ray/XRay"))
 end
 if is_finded("ssr-redir") then
 	o:value("ssr", translate("ShadowsocksR"))
 end
-if has_ss_rust or has_ss_libev then
-    o:value("ss", translate("ShadowSocks"))
+if has_mihomo then
+	o:value("ss", translate("ShadowSocks"))
 end
-if is_finded("trojan") then
-	o:value("trojan", translate("Trojan"))
+if has_ss_rust then
+	o:value("ss-rust", translate("ShadowSocks"))
 end
 if is_finded("naive") then
 	o:value("naiveproxy", translate("NaiveProxy"))
 end
-if is_finded("hysteria") then
-	o:value("hysteria2", translate("Hysteria2"))
+if is_finded("mihomo") then
+	o:value("clash", translate("Clash/Mihomo"))
 end
-if is_finded("tuic-client") then
+if is_finded("mihomo") then
 	o:value("tuic", translate("TUIC"))
 end
 if is_finded("shadow-tls") and is_finded("sslocal") then
@@ -326,47 +363,52 @@ end
 if is_finded("ipt2socks") then
 	o:value("socks5", translate("Socks5"))
 end
-if is_finded("redsocks2") then
-	o:value("tun", translate("Network Tunnel"))
-end
-
-o.description = translate("Using incorrect encryption mothod may causes service fail to start")
-
-o = s:option(Value, "alias", translate("Alias(optional)"))
-
-o = s:option(ListValue, "iface", translate("Network interface to use"))
-for _, e in ipairs(luci.sys.net.devices()) do
-	if e ~= "lo" then
-		o:value(e)
-	end
-end
-o:depends("type", "tun")
-o.description = translate("Redirect traffic to this network interface")
-
--- 新增一个选择框，用于选择 Shadowsocks 版本
-o = s:option(ListValue, "_has_ss_type", string.format("<b><span style='color:red;'>%s</span></b>", translatef("%s Node Use Version", "ShadowSocks")))
-o.description = translate("Selection ShadowSocks Node Use Version.")
--- 设置默认 Shadowsocks 版本
--- 动态添加选项
-if has_ss_rust then
-	o:value("ss-rust", translate("ShadowSocks-rust Version"))
-end
-if has_ss_libev then
-	o:value("ss-libev", translate("ShadowSocks-libev Version"))
-end
--- 读取全局 ss_type
+local old_cfgvalue = o.cfgvalue
 o.cfgvalue = function(self, section)
-	return self.map.uci:get("shadowsocksr", "@server_subscribe[0]", "ss_type") or "ss-rust"
-end
-o:depends("type", "ss")
-o.rmempty = true
-o.write = function(self, section, value)
-	-- 更新 server_subscribe 的 ss_type
-	local old_value = self.map.uci:get("shadowsocksr", "@server_subscribe[0]", "ss_type")
-	if old_value ~= value then
-		self.map.uci:set("shadowsocksr", "@server_subscribe[0]", "ss_type", value)
+	local val = self.map.uci:get("shadowsocksr", section, "type")
+	if old_cfgvalue then
+		return old_cfgvalue(self, section)
 	end
+	return val
 end
+
+		o.description = translate("Using incorrect encryption mothod may causes service fail to start")
+
+	o = s:option(Value, "alias", translate("Alias(optional)"))
+
+	local function clash_source_formvalue(map, section, option)
+		local value = map:formvalue("cbid." .. map.config .. "." .. section .. "." .. option)
+		if value == nil then
+			value = map.uci:get(map.config, section, option)
+		end
+		return trim(value or "")
+	end
+
+	local function validate_clash_source(self, value, section)
+		local clash_url = clash_source_formvalue(self.map, section, "clash_url")
+		local clash_path = clash_source_formvalue(self.map, section, "clash_path")
+		if clash_url == "" and clash_path == "" then
+			return nil, translate("Please specify either a Clash subscription URL or a local YAML path.")
+		end
+		return value
+	end
+
+	o = s:option(Value, "clash_url", translate("Clash Subscription URL"))
+	o.placeholder = "https://example.com/config.yaml"
+	o.rmempty = true
+	o:depends("type", "clash")
+	o.validate = validate_clash_source
+
+	o = s:option(Value, "clash_path", translate("Clash YAML Path"))
+	o.placeholder = "/etc/ssrplus/clash/custom.yaml"
+	o.rmempty = true
+	o:depends("type", "clash")
+	o.validate = validate_clash_source
+
+	o = s:option(Value, "clash_user_agent", translate("Clash User-Agent"))
+	o.default = "clash"
+	o.rmempty = false
+	o:depends("type", "clash")
 
 o = s:option(ListValue, "v2ray_protocol", translate("V2Ray/XRay protocol"))
 o:value("vless", translate("VLESS"))
@@ -383,31 +425,33 @@ o:value("socks", translate("Socks"))
 o:value("http", translate("HTTP"))
 o:depends("type", "v2ray")
 
-o = s:option(Value, "server", translate("Server Address"))
-o.datatype = "host"
-o.rmempty = false
-o:depends("type", "ssr")
-o:depends("type", "ss")
-o:depends("type", "v2ray")
+	o = s:option(Value, "server", translate("Server Address"))
+	o.datatype = "or(host,ip6addr)"
+	o.rmempty = false
+	o:depends("type", "ssr")
+	o:depends("type", "ss")
+	o:depends("type", "ss-rust")
+	o:depends("type", "v2ray")
 o:depends("type", "trojan")
-o:depends("type", "naiveproxy")
-o:depends("type", "hysteria2")
-o:depends("type", "tuic")
-o:depends("type", "shadowtls")
-o:depends("type", "socks5")
+	o:depends("type", "naiveproxy")
+	o:depends("type", "hysteria2")
+	o:depends("type", "tuic")
+	o:depends("type", "shadowtls")
+	o:depends("type", "socks5")
 
-o = s:option(Value, "server_port", translate("Server Port"))
-o.datatype = "port"
-o.rmempty = true
-o:depends("type", "ssr")
-o:depends("type", "ss")
-o:depends("type", "v2ray")
+	o = s:option(Value, "server_port", translate("Server Port"))
+	o.datatype = "port"
+	o.rmempty = true
+	o:depends("type", "ssr")
+	o:depends("type", "ss")
+	o:depends("type", "ss-rust")
+	o:depends("type", "v2ray")
 o:depends("type", "trojan")
-o:depends("type", "naiveproxy")
-o:depends("type", "hysteria2")
-o:depends("type", "tuic")
-o:depends("type", "shadowtls")
-o:depends("type", "socks5")
+	o:depends("type", "naiveproxy")
+	o:depends("type", "hysteria2")
+	o:depends("type", "tuic")
+	o:depends("type", "shadowtls")
+	o:depends("type", "socks5")
 
 o = s:option(Flag, "auth_enable", translate("Enable Authentication"))
 o.rmempty = false
@@ -423,12 +467,13 @@ o:depends({type = "socks5", auth_enable = true})
 o:depends({type = "v2ray", v2ray_protocol = "http", auth_enable = true})
 o:depends({type = "v2ray", v2ray_protocol = "socks", auth_enable = true})
 
-o = s:option(Value, "password", translate("Password"))
-o.password = true
-o.rmempty = true
-o:depends("type", "ssr")
-o:depends("type", "ss")
-o:depends("type", "trojan")
+	o = s:option(Value, "password", translate("Password"))
+	o.password = true
+	o.rmempty = true
+	o:depends("type", "ssr")
+	o:depends("type", "ss")
+	o:depends("type", "ss-rust")
+	o:depends("type", "trojan")
 o:depends("type", "naiveproxy")
 o:depends("type", "shadowtls")
 o:depends({type = "socks5", auth_enable = true})
@@ -444,7 +489,7 @@ end
 o.rmempty = true
 o:depends("type", "ssr")
 
-o = s:option(ListValue, "encrypt_method_ss", translate("Encrypt Method"))
+	o = s:option(ListValue, "encrypt_method_ss", translate("Encrypt Method"))
 for _, v in ipairs(encrypt_methods_ss) do
 	if v == "none" then
 	   o.default = "none"
@@ -453,9 +498,10 @@ for _, v in ipairs(encrypt_methods_ss) do
 	    o:value(v, translate(v))
 	end
 end
-o.rmempty = true
-o:depends("type", "ss")
-o:depends({type = "v2ray", v2ray_protocol = "shadowsocks"})
+	o.rmempty = true
+	o:depends("type", "ss-rust")
+	o:depends("type", "ss")
+	o:depends({type = "v2ray", v2ray_protocol = "shadowsocks"})
 
 o = s:option(Flag, "uot", translate("UDP over TCP"))
 o.description = translate("Enable the SUoT protocol, requires server support.")
@@ -469,25 +515,33 @@ o:depends({type = "v2ray", v2ray_protocol = "shadowsocks"})
 o.default = "1"
 
 -- [[ Enable Shadowsocks Plugin ]]--
-o = s:option(Flag, "enable_plugin", translate("Enable Plugin"))
-o.rmempty = true
-o:depends("type", "ss")
-o.default = "0"
+	o = s:option(Flag, "enable_plugin", translate("Enable Plugin"))
+	o.rmempty = true
+	o:depends("type", "ss")
+	o:depends("type", "ss-rust")
+	o.default = "0"
 
 -- Shadowsocks Plugin
 o = s:option(ListValue, "plugin", translate("Obfs"))
 o:value("none", translate("None"))
-if is_finded("obfs-local") then
+if has_mihomo or is_finded("obfs-local") then
 	o:value("obfs-local", translate("obfs-local"))
 end
-if is_finded("v2ray-plugin") then
+if has_mihomo or is_finded("v2ray-plugin") then
 	o:value("v2ray-plugin", translate("v2ray-plugin"))
+end
+if has_mihomo then
+	o:value("gost-plugin", translate("gost-plugin"))
 end
 if is_finded("xray-plugin") then
 	o:value("xray-plugin", translate("xray-plugin"))
 end
-if is_finded("shadow-tls") then
+if has_mihomo or is_finded("shadow-tls") then
 	o:value("shadow-tls", translate("shadow-tls"))
+end
+if has_mihomo then
+	o:value("restls", translate("restls"))
+	o:value("kcptun", translate("kcptun"))
 end
 o:value("custom", translate("Custom"))
 o.rmempty = true
@@ -539,7 +593,7 @@ o = s:option(Value, "port_range", translate("Port hopping range"))
 o.description = translate("Format as 10000:20000 or 10000-20000 Multiple groups are separated by commas (,).")
 o:depends({type = "hysteria2", flag_port_hopping = true})
 o:depends({type = "v2ray", v2ray_protocol = "hysteria2", flag_port_hopping = true})
---o.datatype = "portrange"
+o.datatype = "or(uinteger,portrange)"
 o.rmempty = true
 
 o = s:option(Flag, "flag_transport", translate("Enable Transport Protocol Settings"))
@@ -554,9 +608,10 @@ o.default = "udp"
 o.rmempty = true
 
 o = s:option(Value, "hopinterval", translate("Port Hopping Interval(Unit:Second)"))
+o.description = translate("Supports a fixed value or a random range (e.g., 30, 5-30), minimum 5.")
 o:depends({type = "hysteria2", flag_transport = true, flag_port_hopping = true})
 o:depends({type = "v2ray", v2ray_protocol = "hysteria2", flag_port_hopping = true})
-o.datatype = "uinteger"
+o.datatype = "or(uinteger,portrange)"
 o.rmempty = true
 o.default = "30"
 
@@ -677,7 +732,7 @@ o:depends("type", "shadowtls")
 if is_finded("sslocal") then
 	o:value("sslocal", translate("ShadowSocks-rust Version"))
 end
-if is_finded("xray") or is_finded("v2ray") then
+if is_finded("xray") then
 	o:value("vmess", translate("Vmess Protocol"))
 end
 o.default = "sslocal"
@@ -717,7 +772,7 @@ o:depends("type", "tuic")
 --Tuic IP
 o = s:option(Value, "tuic_ip", translate("TUIC Server IP Address"))
 o.rmempty = true
-o.datatype = "ip4addr"
+o.datatype = "ipaddr"
 o.default = ""
 o:depends("type", "tuic")
 
@@ -898,7 +953,7 @@ o = s:option(Value, "ws_heartbeatPeriod", translate("HeartbeatPeriod(second)"))
 o.datatype = "integer"
 o:depends("transport", "ws")
 
-if is_finded("v2ray") then
+if is_finded("xray") then
 	-- WS前置数据
 	o = s:option(Value, "ws_ed", translate("Max Early Data"))
 	o:depends("ws_ed_enable", true)
@@ -1108,15 +1163,8 @@ o:depends({type = "v2ray", v2ray_protocol = "wireguard"})
 o.default = 1350
 o.rmempty = true
 
-o = s:option(Value, "tti", translate("TTI"))
-o.datatype = "uinteger"
-o:depends("transport", "kcp")
-o.default = 50
-o.rmempty = true
-
 o = s:option(Value, "uplink_capacity", translate("Uplink Capacity(Default:Mbps)"))
 o.datatype = "uinteger"
-o:depends("transport", "kcp")
 o:depends("type", "hysteria2")
 o:depends({type = "v2ray", v2ray_protocol = "hysteria2"})
 o.placeholder = 5
@@ -1124,29 +1172,12 @@ o.rmempty = true
 
 o = s:option(Value, "downlink_capacity", translate("Downlink Capacity(Default:Mbps)"))
 o.datatype = "uinteger"
-o:depends("transport", "kcp")
 o:depends("type", "hysteria2")
 o:depends({type = "v2ray", v2ray_protocol = "hysteria2"})
 o.placeholder = 20
 o.rmempty = true
 
-o = s:option(Value, "read_buffer_size", translate("Read Buffer Size"))
-o.datatype = "uinteger"
-o:depends("transport", "kcp")
-o.default = 2
-o.rmempty = true
-
-o = s:option(Value, "write_buffer_size", translate("Write Buffer Size"))
-o.datatype = "uinteger"
-o:depends("transport", "kcp")
-o.default = 2
-o.rmempty = true
-
 o = s:option(Value, "seed", translate("Obfuscate password (optional)"))
-o:depends("transport", "kcp")
-o.rmempty = true
-
-o = s:option(Flag, "congestion", translate("Congestion"))
 o:depends("transport", "kcp")
 o.rmempty = true
 
@@ -1195,6 +1226,14 @@ o.rmempty = true
 
 -- [[ User-Agent部分 ]]--
 o = s:option(Value, "user_agent", translate("User-Agent"))
+o.default = ""
+o:value("", translate("Default"))
+o:value("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36", translate("chrome"))
+o:value("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0", translate("firefox"))
+o:value("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15", translate("safari"))
+o:value("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.70", translate("edge"))
+o:value("Go-http-client/1.1", translate("golang"))
+o:value("curl/7.68.0", translate("curl"))
 o:depends("tcp_guise", "http")
 o:depends("transport", "ws")
 o:depends("transport", "httpupgrade")
@@ -1590,6 +1629,7 @@ o.rmempty = true
 o.default = "0"
 o:depends("type", "ssr")
 o:depends("type", "ss")
+o:depends("type", "ss-rust")
 o:depends("type", "trojan")
 o:depends("type", "hysteria2")
 o:depends({type = "v2ray", v2ray_protocol = "vless", transport = "xhttp"})
@@ -1599,32 +1639,31 @@ o = s:option(Flag, "switch_enable", translate("Enable Auto Switch"))
 o.rmempty = false
 o.default = "1"
 
-o = s:option(Value, "local_port", translate("Local Port"))
-o.datatype = "port"
-o.default = 1234
-o.rmempty = false
-
 if is_finded("kcptun-client") then
 	o = s:option(Flag, "kcp_enable", translate("KcpTun Enable"))
 	o.rmempty = true
 	o.default = "0"
 	o:depends("type", "ssr")
+	o:depends("type", "ss-rust")
 	o:depends("type", "ss")
 
 	o = s:option(Value, "kcp_port", translate("KcpTun Port"))
 	o.datatype = "portrange"
 	o.default = 4000
 	o:depends("type", "ssr")
+	o:depends("type", "ss-rust")
 	o:depends("type", "ss")
 
 	o = s:option(Value, "kcp_password", translate("KcpTun Password"))
 	o.password = true
 	o:depends("type", "ssr")
+	o:depends("type", "ss-rust")
 	o:depends("type", "ss")
 
 	o = s:option(Value, "kcp_param", translate("KcpTun Param"))
 	o.default = "--nocomp"
 	o:depends("type", "ssr")
+	o:depends("type", "ss-rust")
 	o:depends("type", "ss")
 end
 

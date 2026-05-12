@@ -118,6 +118,12 @@ msgstr "0 — отключить функцию"
 msgid "Current node: %s"
 msgstr "Текущий узел: %s"
 
+msgid "Direct domain DNS routing"
+msgstr "Прямая маршрутизация DNS домена"
+
+msgid "Please note that the program will not start if the format is incorrect!"
+msgstr "Обратите внимание, что программа не запустится, если формат указан неверно!"
+
 msgid "IP:Port mode acceptable, multi value split with english comma."
 msgstr "Допустим формат IP:Port. Несколько значений указывайте через запятую."
 
@@ -1639,14 +1645,14 @@ msgstr "Размер буфера"
 msgid "Buffer size for every connection (kB)"
 msgstr "Размер буфера для каждого соединения (КБ)"
 
-msgid "Handshake Timeout"
-msgstr "Тайм-аут рукопожатия"
-
 msgid "Idle Timeout"
 msgstr "Тайм-аут простоя"
 
-msgid "Hop Interval"
-msgstr "Интервал смены порта"
+msgid "Hop Interval(second)"
+msgstr "Интервал прыжков (секунды)"
+
+msgid "Supports a fixed value or a random range (e.g., 30, 5-30), minimum 5."
+msgstr "Поддерживается фиксированное значение или случайный диапазон (например, 30, 5-30), минимум 5."
 
 msgid "HeartbeatPeriod(second)"
 msgstr "Период heartbeat-пакетов (сек)"
@@ -1765,6 +1771,15 @@ msgstr "Задержка (мс)"
 msgid "If is domain name, The requested domain name will be resolved to IP before connect."
 msgstr "Если указано доменное имя, оно будет разрешено в IP-адрес перед подключением."
 
+msgid "Domain DNS Resolve"
+msgstr "Разрешение DNS-запросов для домена"
+
+msgid "If the node address is a domain name, this DNS will be used for resolution."
+msgstr "Если адрес узла является доменным именем, для разрешения будет использоваться этот DNS-сервер."
+
+msgid "Supports only Xray or Sing-box node types."
+msgstr "Поддерживаются только узлы типа Xray или Sing-box."
+
 msgid "Chain Proxy"
 msgstr "Цепочка прокси"
 
@@ -1780,9 +1795,6 @@ msgid ""
 msgstr ""
 "Цепочка прокси работает только с серверами Xray или Sing-Box.<br>"
 "В качестве звеньев цепочки можно использовать только серверы, добавленные вручную или импортированные."
-
-msgid "Set the default domain resolution strategy for the sing-box node."
-msgstr "Задать стратегию разрешения доменов по умолчанию для сервера Sing-Box."
 
 msgid "Prefer IPv4"
 msgstr "Предпочитать IPv4"
@@ -2216,6 +2228,12 @@ msgstr "Вход %s:%s"
 msgid "Node: %s:%s, Weight: %s"
 msgstr "Сервер: %s:%s, вес: %s"
 
+msgid "[Rule update] instance is running; please try again later."
+msgstr "Экземпляр [Обновление правила] запущен; пожалуйста, попробуйте позже."
+
+msgid "[Subscription] instance is running; [Rule Update] queue and wait."
+msgstr "Экземпляр [Подписка] запущен; [Обновление правила] поставить в очередь и ждать."
+
 msgid "Start updating the rules..."
 msgstr "Начало обновления правил..."
 
@@ -2368,6 +2386,12 @@ msgstr "Содержимое подписки [%s] пусто. Возможно,
 
 msgid "Proxy"
 msgstr "Прокси"
+
+msgid "[Subscription] instance is running; please try again later."
+msgstr "Экземпляр [Подписки] запущен; пожалуйста, попробуйте позже."
+
+msgid "[Rule Update] instance is running; [Subscription] queue and wait."
+msgstr "Экземпляр [Обновление правила] запущен; [Подписка] ставится в очередь и ожидает."
 
 msgid "Start subscribing..."
 msgstr "Начало подписки..."

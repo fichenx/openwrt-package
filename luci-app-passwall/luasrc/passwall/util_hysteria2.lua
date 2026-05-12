@@ -48,7 +48,7 @@ function gen_config(var)
 	local local_http_username = var["local_http_username"]
 	local local_http_password = var["local_http_password"]
 	local tcp_proxy_way = var["tcp_proxy_way"]
-	local server_host = var["server_host"] or node.address
+	local server_host = var["server_host"] or (node.address or ""):lower()
 	local server_port = var["server_port"] or node.port
 
 	if api.is_ipv6(server_host) then
@@ -64,16 +64,27 @@ function gen_config(var)
 		server = server,
 		transport = {
 			type = "udp",
-			udp = {
-				hopInterval = (function()
-							local HopIntervalStr = tostring(node.hysteria2_hop_interval or "30s")
-							local HopInterval = tonumber(HopIntervalStr:match("^%d+"))
-							if HopInterval and HopInterval >= 5 then
-								return tostring(HopInterval) .. "s"
-							end
-							return "30s"
-						end)(),
-			}
+			udp = node.hysteria2_hop and (function()
+				local udp = {}
+				local t = node.hysteria2_hop_interval
+				if not t then return nil end
+				if t:find("-", 1, true) then
+					local min, max = t:match("^(%d+)%-(%d+)$")
+					min = tonumber(min)
+					max = tonumber(max)
+					if min and max then
+						min = (min >= 5) and min or 5
+						max = (max >= min) and max or min
+						udp.minHopInterval = min .. "s"
+						udp.maxHopInterval = max .. "s"
+						return udp
+					end
+				end
+				t = tonumber((t or "30"):match("^%d+"))
+				t = (t and t >= 5) and t or 30
+				udp.hopInterval = t .. "s"
+				return udp
+			end)() or nil
 		},
 		obfs = (node.hysteria2_obfs) and {
 			type = "salamander",
@@ -85,7 +96,7 @@ function gen_config(var)
 		tls = {
 			sni = node.tls_serverName,
 			insecure = (node.tls_allowInsecure == "1") and true or false,
-			pinSHA256 = (node.hysteria2_tls_pinSHA256) and node.hysteria2_tls_pinSHA256 or nil,
+			pinSHA256 = (node.tls_pinSHA256) and node.tls_pinSHA256 or nil,
 		},
 		quic = {
 			initStreamReceiveWindow = (node.hysteria2_recv_window) and tonumber(node.hysteria2_recv_window) or nil,

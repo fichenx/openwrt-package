@@ -26,11 +26,25 @@
   }
 
   var root = container.attachShadow ? (container.shadowRoot || container.attachShadow({ mode: "open" })) : container;
+
+  function defaultProtectedDirectories() {
+    return [];
+  }
+
   var state = {
     status: null,
     form: null,
     options: null,
     newOrigin: "",
+    security: {
+      runningUser: "openclawmgr",
+      newDirectoryPath: "",
+      directoryError: "",
+      pendingAddPath: "",
+      deleteTargetId: null,
+      deleteTargetPath: "",
+      protectedDirectories: defaultProtectedDirectories()
+    },
     activeTab: "basic",
     savingSection: "",
     lastAppliedAt: "",
@@ -51,6 +65,14 @@
     }
   };
   var styleText = "";
+  var noticeOverlay = null;
+  var noticeCard = null;
+  var noticeTitle = null;
+  var noticeMessage = null;
+  var noticeCloseButton = null;
+  var actionDialogOverlay = null;
+  var actionDialogCard = null;
+  state.formErrors = state.formErrors || { base_dir: "" };
 
   function request(url, options) {
     options = options || {};
@@ -102,60 +124,32 @@
       .replace(/"/g, "&quot;");
   }
 
-  function modelForAgent(agent) {
+  function defaultModelForAgent(agent) {
     return {
-      openai: "openai/gpt-5.2",
-      anthropic: "anthropic/claude-sonnet-4-6",
-      "minimax-cn": "minimax-cn/MiniMax-M2.5",
-      moonshot: "moonshot/kimi-k2.5",
-      "custom-provider": "custom-provider/custom-model"
-    }[agent] || "anthropic/claude-sonnet-4-6";
+      openai: "gpt-5.2",
+      anthropic: "claude-sonnet-4-6",
+      "minimax-cn": "MiniMax-M2.5",
+      moonshot: "kimi-k2.5",
+      "custom-provider": "custom-model"
+    }[agent] || "claude-sonnet-4-6";
   }
 
-  function modelPrefixForAgent(agent) {
-    return {
-      openai: "openai",
-      anthropic: "anthropic",
-      "minimax-cn": "minimax-cn",
-      moonshot: "moonshot",
-      "custom-provider": "custom-provider"
-    }[agent] || "anthropic";
-  }
-
-  function normalizeModelValue(agent, value) {
-    var prefix = modelPrefixForAgent(agent);
+  function normalizeModelValue(value, fallback) {
     value = String(value || "").replace(/^\s+|\s+$/g, "");
     if (!value) {
-      return modelForAgent(agent);
+      return String(fallback || "");
     }
-    if (value.indexOf(prefix + "/") === 0) {
-      return value;
-    }
-    if (/^[^/]+\/.+/.test(value)) {
-      return prefix + "/" + value.replace(/^[^/]+\//, "");
-    }
-    return prefix + "/" + value;
-  }
-
-  function modelMatchesAgent(agent, model) {
-    model = String(model || "");
-    return model.indexOf(modelPrefixForAgent(agent) + "/") === 0;
+    return value.replace(/^[^/]+\//, "");
   }
 
   function resolveModelValue(form) {
     var agent = form && form.default_agent ? form.default_agent : "anthropic";
     var value = form && form.default_model ? String(form.default_model) : "";
-    if (!value || !modelMatchesAgent(agent, value)) {
-      return normalizeModelValue(agent, value);
-    }
-    return value;
+    return normalizeModelValue(value, defaultModelForAgent(agent));
   }
 
-  function modelPlaceholder(agent) {
-    if (agent === "custom-provider") {
-      return "例如 gpt-5.1 或 custom-provider/gpt-5.1";
-    }
-    return "请按照<provider>/<model-id>格式填写";
+  function modelPlaceholder() {
+    return "这里只填写模型名；例如 gpt-5.1";
   }
 
   function statusText(status) {
@@ -179,6 +173,466 @@
 
   function escapeAttr(value) {
     return escapeHtml(value).replace(/'/g, "&#39;");
+  }
+
+  function getSecurityState() {
+    if (!state.security) {
+      state.security = {
+        runningUser: "openclawmgr",
+        newDirectoryPath: "",
+        directoryError: "",
+        pendingAddPath: "",
+        deleteTargetId: null,
+        deleteTargetPath: "",
+        protectedDirectories: defaultProtectedDirectories()
+      };
+    }
+    if (!Array.isArray(state.security.protectedDirectories)) {
+      state.security.protectedDirectories = defaultProtectedDirectories();
+    }
+    if (state.security.newDirectoryPath == null) {
+      state.security.newDirectoryPath = "";
+    }
+    if (state.security.directoryError == null) {
+      state.security.directoryError = "";
+    }
+    if (state.security.pendingAddPath == null) {
+      state.security.pendingAddPath = "";
+    }
+    if (state.security.deleteTargetPath == null) {
+      state.security.deleteTargetPath = "";
+    }
+    return state.security;
+  }
+
+  function ensureNoticeDialog() {
+    if (noticeOverlay && noticeOverlay.parentNode) {
+      return;
+    }
+
+    noticeOverlay = document.createElement("div");
+    noticeOverlay.style.position = "fixed";
+    noticeOverlay.style.inset = "0";
+    noticeOverlay.style.zIndex = "2147483647";
+    noticeOverlay.style.display = "none";
+    noticeOverlay.style.alignItems = "center";
+    noticeOverlay.style.justifyContent = "center";
+    noticeOverlay.style.padding = "20px";
+    noticeOverlay.style.boxSizing = "border-box";
+    noticeOverlay.style.background = "rgba(15, 23, 42, 0.42)";
+
+    noticeCard = document.createElement("div");
+    noticeCard.style.width = "min(560px, calc(100vw - 40px))";
+    noticeCard.style.borderRadius = "18px";
+    noticeCard.style.border = "1px solid rgba(217, 225, 238, 0.95)";
+    noticeCard.style.background = "#ffffff";
+    noticeCard.style.boxShadow = "0 10px 28px rgba(15, 23, 42, 0.18)";
+    noticeCard.style.padding = "20px";
+    noticeCard.style.boxSizing = "border-box";
+    noticeCard.style.color = "#1f2937";
+
+    noticeTitle = document.createElement("h3");
+    noticeTitle.style.margin = "0 0 10px";
+    noticeTitle.style.fontSize = "18px";
+    noticeTitle.style.fontWeight = "700";
+
+    noticeMessage = document.createElement("div");
+    noticeMessage.style.marginBottom = "16px";
+    noticeMessage.style.color = "#6b7280";
+    noticeMessage.style.lineHeight = "1.6";
+
+    var footer = document.createElement("div");
+    footer.style.display = "flex";
+    footer.style.justifyContent = "flex-end";
+    footer.style.gap = "14px";
+
+    noticeCloseButton = document.createElement("button");
+    noticeCloseButton.type = "button";
+    noticeCloseButton.textContent = "知道了";
+    noticeCloseButton.style.appearance = "none";
+    noticeCloseButton.style.display = "inline-flex";
+    noticeCloseButton.style.alignItems = "center";
+    noticeCloseButton.style.justifyContent = "center";
+    noticeCloseButton.style.border = "1px solid #d9e1ee";
+    noticeCloseButton.style.background = "#2f67f6";
+    noticeCloseButton.style.color = "#ffffff";
+    noticeCloseButton.style.borderRadius = "10px";
+    noticeCloseButton.style.height = "36px";
+    noticeCloseButton.style.minWidth = "96px";
+    noticeCloseButton.style.padding = "0 14px";
+    noticeCloseButton.style.fontSize = "13px";
+    noticeCloseButton.style.fontWeight = "600";
+    noticeCloseButton.style.cursor = "pointer";
+    noticeCloseButton.onclick = function() {
+      closeNoticeDialog();
+    };
+
+    footer.appendChild(noticeCloseButton);
+    noticeCard.appendChild(noticeTitle);
+    noticeCard.appendChild(noticeMessage);
+    noticeCard.appendChild(footer);
+    noticeOverlay.appendChild(noticeCard);
+    document.body.appendChild(noticeOverlay);
+  }
+
+  function openNoticeDialog(message, title) {
+    ensureNoticeDialog();
+    noticeTitle.textContent = String(title || "提示");
+    noticeMessage.textContent = String(message || "");
+    noticeOverlay.style.display = "flex";
+  }
+
+  function closeNoticeDialog() {
+    if (!noticeOverlay) {
+      return;
+    }
+    noticeOverlay.style.display = "none";
+  }
+
+  function ensureActionDialog() {
+    if (actionDialogOverlay && actionDialogOverlay.parentNode) {
+      return;
+    }
+
+    actionDialogOverlay = document.createElement("div");
+    actionDialogOverlay.style.position = "fixed";
+    actionDialogOverlay.style.inset = "0";
+    actionDialogOverlay.style.zIndex = "2147483646";
+    actionDialogOverlay.style.display = "none";
+    actionDialogOverlay.style.alignItems = "center";
+    actionDialogOverlay.style.justifyContent = "center";
+    actionDialogOverlay.style.padding = "20px";
+    actionDialogOverlay.style.boxSizing = "border-box";
+    actionDialogOverlay.style.background = "rgba(15, 23, 42, 0.42)";
+
+    actionDialogCard = document.createElement("div");
+    actionDialogCard.style.width = "min(560px, calc(100vw - 40px))";
+    actionDialogCard.style.borderRadius = "18px";
+    actionDialogCard.style.border = "1px solid rgba(217, 225, 238, 0.95)";
+    actionDialogCard.style.background = "#ffffff";
+    actionDialogCard.style.boxShadow = "0 10px 28px rgba(15, 23, 42, 0.18)";
+    actionDialogCard.style.padding = "20px";
+    actionDialogCard.style.boxSizing = "border-box";
+    actionDialogCard.style.color = "#1f2937";
+
+    actionDialogOverlay.appendChild(actionDialogCard);
+    document.body.appendChild(actionDialogOverlay);
+  }
+
+  function makeActionDialogText(text, muted) {
+    var el = document.createElement("div");
+    el.textContent = String(text || "");
+    el.style.marginBottom = "10px";
+    el.style.lineHeight = "1.6";
+    el.style.color = muted ? "#6b7280" : "#1f2937";
+    return el;
+  }
+
+  function makeActionDialogCode(text) {
+    var el = document.createElement("code");
+    el.textContent = String(text || "");
+    el.style.display = "block";
+    el.style.marginBottom = "14px";
+    el.style.padding = "10px 12px";
+    el.style.borderRadius = "12px";
+    el.style.background = "rgba(47, 103, 246, 0.08)";
+    el.style.color = "#1f2937";
+    el.style.overflowWrap = "anywhere";
+    return el;
+  }
+
+  function makeActionDialogFooter() {
+    var el = document.createElement("div");
+    el.style.display = "flex";
+    el.style.justifyContent = "flex-end";
+    el.style.gap = "14px";
+    el.style.marginTop = "12px";
+    return el;
+  }
+
+  function makeActionDialogButton(label, kind, onclick) {
+    var button = document.createElement("button");
+    button.type = "button";
+    button.textContent = String(label || "");
+    button.style.appearance = "none";
+    button.style.display = "inline-flex";
+    button.style.alignItems = "center";
+    button.style.justifyContent = "center";
+    button.style.border = "1px solid " + (kind === "danger" ? "#ef4444" : kind === "primary" ? "#2f67f6" : "#d9e1ee");
+    button.style.background = kind === "danger" ? "#ef4444" : kind === "primary" ? "#2f67f6" : "#ffffff";
+    button.style.color = kind === "default" ? "#1f2937" : "#ffffff";
+    button.style.borderRadius = "10px";
+    button.style.minWidth = "96px";
+    button.style.minHeight = "36px";
+    button.style.padding = "0 14px";
+    button.style.fontSize = "13px";
+    button.style.fontWeight = "600";
+    button.style.cursor = "pointer";
+    button.onclick = onclick;
+    return button;
+  }
+
+  function makeActionDialogOption(title, note, onclick) {
+    var button = document.createElement("button");
+    var titleEl = document.createElement("span");
+    var noteEl = document.createElement("span");
+
+    button.type = "button";
+    button.style.appearance = "none";
+    button.style.display = "flex";
+    button.style.flexDirection = "column";
+    button.style.alignItems = "flex-start";
+    button.style.justifyContent = "flex-start";
+    button.style.gap = "4px";
+    button.style.width = "100%";
+    button.style.padding = "12px 14px";
+    button.style.border = "1px solid #d9e1ee";
+    button.style.borderRadius = "12px";
+    button.style.background = "#ffffff";
+    button.style.cursor = "pointer";
+    button.style.textAlign = "left";
+    button.onclick = onclick;
+
+    titleEl.textContent = String(title || "");
+    titleEl.style.color = "#1f2937";
+    titleEl.style.fontWeight = "700";
+
+    noteEl.textContent = String(note || "");
+    noteEl.style.color = "#6b7280";
+    noteEl.style.fontSize = "12px";
+    noteEl.style.fontWeight = "500";
+
+    button.appendChild(titleEl);
+    button.appendChild(noteEl);
+    return button;
+  }
+
+  function hideActionDialog() {
+    if (actionDialogOverlay) {
+      actionDialogOverlay.style.display = "none";
+    }
+  }
+
+  function syncActionDialog() {
+    ensureActionDialog();
+    while (actionDialogCard.firstChild) {
+      actionDialogCard.removeChild(actionDialogCard.firstChild);
+    }
+
+    var security = getSecurityState();
+    var deleteDialogOpen = security.deleteTargetId != null;
+    var addDialogOpen = !!security.pendingAddPath;
+
+    if (!deleteDialogOpen && !addDialogOpen) {
+      hideActionDialog();
+      return;
+    }
+
+    var title = document.createElement("h3");
+    title.style.margin = "0 0 12px";
+    title.style.fontSize = "18px";
+    title.style.fontWeight = "700";
+    actionDialogCard.appendChild(title);
+
+    if (deleteDialogOpen) {
+      var actions = document.createElement("div");
+      title.textContent = "删除禁止访问目录";
+      actionDialogCard.appendChild(makeActionDialogText("确定要从保护列表中移除以下目录吗？", true));
+      actionDialogCard.appendChild(makeActionDialogCode(security.deleteTargetPath || ""));
+      actionDialogCard.appendChild(makeActionDialogText("请选择删除方式：", true));
+
+      actions.style.display = "grid";
+      actions.style.gap = "10px";
+      actions.appendChild(makeActionDialogOption("直接删除", "仅从列表移除，不改变目录权限", function() {
+        handleSecurityDelete("direct");
+      }));
+      actions.appendChild(makeActionDialogOption("恢复其他用户组可访问（drwxr-xr-x）", "移除并恢复权限", function() {
+        handleSecurityDelete("restore");
+      }));
+      actionDialogCard.appendChild(actions);
+
+      var deleteFooter = makeActionDialogFooter();
+      deleteFooter.appendChild(makeActionDialogButton("取消", "default", function() {
+        var nextSecurity = getSecurityState();
+        nextSecurity.deleteTargetId = null;
+        nextSecurity.deleteTargetPath = "";
+        render();
+      }));
+      actionDialogCard.appendChild(deleteFooter);
+    } else if (addDialogOpen) {
+      title.textContent = "确认添加禁止访问目录";
+      actionDialogCard.appendChild(makeActionDialogText("添加后将尝试修改该目录权限，限制 OpenClaw 对其访问：", true));
+      actionDialogCard.appendChild(makeActionDialogCode(security.pendingAddPath || ""));
+
+      var warning = document.createElement("div");
+      warning.style.marginTop = "4px";
+      warning.style.marginBottom = "14px";
+      warning.style.padding = "12px 14px";
+      warning.style.border = "1px solid rgba(245, 158, 11, 0.24)";
+      warning.style.borderRadius = "12px";
+      warning.style.background = "rgba(245, 158, 11, 0.08)";
+
+      var warningTitle = document.createElement("div");
+      warningTitle.textContent = "请确认你已知晓以下风险：";
+      warningTitle.style.marginBottom = "8px";
+      warningTitle.style.color = "#1f2937";
+      warningTitle.style.fontSize = "13px";
+      warningTitle.style.fontWeight = "700";
+
+      var warningList = document.createElement("ul");
+      warningList.style.margin = "0";
+      warningList.style.paddingLeft = "18px";
+      warningList.style.color = "#6b7280";
+
+      [
+        "该目录的 Linux 权限会被修改为仅允许 root 和 root 组访问。",
+        "这可能影响其他服务、用户或脚本对该目录的正常访问。",
+        "本功能不是容器或沙箱隔离，只是基于系统文件权限限制。",
+        "请勿将 OpenClaw 自身的数据目录、程序目录加入禁止访问列表。"
+      ].forEach(function(text) {
+        var item = document.createElement("li");
+        item.textContent = text;
+        warningList.appendChild(item);
+      });
+
+      warning.appendChild(warningTitle);
+      warning.appendChild(warningList);
+      actionDialogCard.appendChild(warning);
+
+      var addFooter = makeActionDialogFooter();
+      addFooter.appendChild(makeActionDialogButton("取消", "default", function() {
+        var nextSecurity = getSecurityState();
+        nextSecurity.pendingAddPath = "";
+        render();
+      }));
+      addFooter.appendChild(makeActionDialogButton("确认添加", "danger", function() {
+        handleSecurityAddConfirm();
+      }));
+      actionDialogCard.appendChild(addFooter);
+    }
+
+    actionDialogOverlay.style.display = "flex";
+  }
+
+  function handleSecurityAddConfirm() {
+    var security = getSecurityState();
+    var path = security.pendingAddPath || "";
+    if (!path) {
+      render();
+      return;
+    }
+    postJson(config.securityAddUrl, { path: path }).then(function(rv) {
+      if (!rv || !rv.ok) {
+        security.pendingAddPath = "";
+        security.directoryError = (rv && rv.error) || "添加目录失败";
+        render();
+        return;
+      }
+      security.pendingAddPath = "";
+      security.newDirectoryPath = "";
+      security.directoryError = "";
+      loadSecurityData();
+    }).catch(function() {
+      security.pendingAddPath = "";
+      security.directoryError = "添加目录失败";
+      render();
+    });
+  }
+
+  function handleSecurityDelete(mode) {
+    var security = getSecurityState();
+    if (security.deleteTargetId == null) {
+      return;
+    }
+    postJson(config.securityRemoveUrl, { id: security.deleteTargetId, mode: mode }).then(function(rv) {
+      if (!rv || !rv.ok) {
+        openNoticeDialog((rv && rv.error) || (mode === "restore" ? "恢复并删除失败" : "删除失败"));
+        return;
+      }
+      security.deleteTargetId = null;
+      security.deleteTargetPath = "";
+      loadSecurityData();
+    }).catch(function() {
+      openNoticeDialog(mode === "restore" ? "恢复并删除失败" : "删除失败");
+    });
+  }
+
+  function securityDataDirectory() {
+    var formBaseDir = state.form && state.form.base_dir ? String(state.form.base_dir) : "";
+    var statusBaseDir = state.status && state.status.base_dir ? String(state.status.base_dir) : "";
+    var suggestedBaseDir = state.options && state.options.suggested_base_dir ? String(state.options.suggested_base_dir) : "";
+    return formBaseDir || statusBaseDir || suggestedBaseDir || "";
+  }
+
+  function getFormErrors() {
+    state.formErrors = state.formErrors || { base_dir: "" };
+    if (state.formErrors.base_dir == null) {
+      state.formErrors.base_dir = "";
+    }
+    return state.formErrors;
+  }
+
+  function isBaseDirErrorMessage(message) {
+    var text = String(message || "");
+    return text.indexOf("数据目录") >= 0 || text.indexOf("base_dir") >= 0;
+  }
+
+  function validateProtectedDirectory(path) {
+    var security = getSecurityState();
+    var value = String(path || "").replace(/^\s+|\s+$/g, "");
+    var dataDirectory = securityDataDirectory();
+    if (!value) {
+      return "请输入目录路径";
+    }
+    if (value.charAt(0) !== "/") {
+      return "请输入绝对路径";
+    }
+    if (value === "/") {
+      return "不能添加根目录 /";
+    }
+    if (dataDirectory && (value === dataDirectory || value.indexOf(dataDirectory + "/") === 0)) {
+      return "不能添加 OpenClaw 的运行目录";
+    }
+    if (dataDirectory && dataDirectory.indexOf(value + "/") === 0) {
+      return "不能添加 OpenClaw 运行目录的父目录";
+    }
+    if (security.protectedDirectories.some(function(item) { return item.path === value; })) {
+      return "该目录已在列表中";
+    }
+    return "";
+  }
+
+  function securityProtectionMode(level) {
+    return level === "strict" ? "仅允许 root 访问" : "仅允许 root 和 root 组访问";
+  }
+
+  function securityStatusBadge(status) {
+    var map = {
+      active: ["已生效", "is-active"],
+      inactive: ["未生效", "is-danger"],
+      "not-found": ["目录不存在", "is-muted"],
+      denied: ["已拒绝", "is-active"],
+      "check-failed": ["检测失败", "is-danger"]
+    };
+    var item = map[status] || [status || "未知", "is-muted"];
+    return '<span class="oclm-security-badge ' + item[1] + '">' + escapeHtml(item[0]) + '</span>';
+  }
+
+  function loadSecurityData(done) {
+    if (!config.securityDataUrl) {
+      if (typeof done === "function") done();
+      return;
+    }
+    request(config.securityDataUrl).then(function(rv) {
+      var security = getSecurityState();
+      security.protectedDirectories = rv && rv.ok && Array.isArray(rv.items) ? rv.items : [];
+      render();
+      if (typeof done === "function") done(rv);
+    }).catch(function() {
+      getSecurityState().protectedDirectories = [];
+      render();
+      if (typeof done === "function") done(null);
+    });
   }
 
   function maskedTokenUrl(url) {
@@ -335,6 +789,26 @@
       '</svg>';
   }
 
+  function refreshIcon(className) {
+    return '' +
+      '<svg class="' + escapeAttr(className || "") + '" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+      '<path d="M21 12a9 9 0 0 1-15.4 6.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>' +
+      '<path d="M3 12a9 9 0 0 1 15.4-6.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>' +
+      '<path d="M3 4v5h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>' +
+      '<path d="M21 20v-5h-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>' +
+      '</svg>';
+  }
+
+  function trashIcon(className) {
+    return '' +
+      '<svg class="' + escapeAttr(className || "") + '" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+      '<path d="M3 6h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>' +
+      '<path d="M8 6V4.5A1.5 1.5 0 0 1 9.5 3h5A1.5 1.5 0 0 1 16 4.5V6" stroke="currentColor" stroke-width="1.8"></path>' +
+      '<path d="M19 6l-1 13a2 2 0 0 1-2 1H8a2 2 0 0 1-2-1L5 6" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path>' +
+      '<path d="M10 11v5M14 11v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>' +
+      '</svg>';
+  }
+
   function taskWindowAvailable() {
     return !!(window.taskd && window.taskd.show_log);
   }
@@ -342,7 +816,7 @@
   function showTaskLog(taskId) {
     taskId = taskId || "openclawmgr";
     if (!taskWindowAvailable()) {
-      window.alert("任务窗口不可用（未加载 taskd/xterm）。请安装 luci-lib-taskd 和 luci-lib-xterm，然后强制刷新页面。");
+      openNoticeDialog("任务窗口不可用（未加载 taskd/xterm）。请安装 luci-lib-taskd 和 luci-lib-xterm，然后强制刷新页面。");
       return;
     }
     var now = Date.now ? Date.now() : (+new Date());
@@ -447,7 +921,9 @@
   function render() {
     var status = state.status || {};
     var form = state.form || {};
+    var formErrors = getFormErrors();
     var options = state.options || { base_dir_choices: [] };
+    var security = getSecurityState();
     var allowedOrigins = Array.isArray(form.allowed_origins) ? form.allowed_origins : [];
     var baseDirOptions = (options.base_dir_choices || []).map(function(path) {
       return '<option value="' + escapeHtml(path) + '"></option>';
@@ -472,7 +948,22 @@
     var savingAi = state.savingSection === "ai";
     var savingAccess = state.savingSection === "access";
     var noteText = statusNoteText(status);
-
+    var securityList = security.protectedDirectories.map(function(item) {
+      return '' +
+        '<div class="oclm-security-row">' +
+        '<div class="oclm-security-row-main">' +
+        '<div class="oclm-security-item-path"><code>' + escapeHtml(item.path) + '</code>' + securityStatusBadge(item.status) + '</div>' +
+        '<div class="oclm-security-item-grid">' +
+        '<div><span class="oclm-security-key">保护方式：</span>' + escapeHtml(item.protectionMode) + '</div>' +
+        '<div><span class="oclm-security-key">检测结果：</span>' + escapeHtml(item.checkResult) + '</div>' +
+        '</div>' +
+        '</div>' +
+        '<div class="oclm-security-row-actions">' +
+        '<button class="oclm-icon-ghost-button" type="button" data-security-recheck="' + escapeAttr(item.id) + '" title="重新检测" aria-label="重新检测">' + refreshIcon("oclm-row-icon") + '</button>' +
+        '<button class="oclm-icon-ghost-button oclm-icon-ghost-danger" type="button" data-security-delete="' + escapeAttr(item.id) + '" title="删除" aria-label="删除">' + trashIcon("oclm-row-icon") + '</button>' +
+        '</div>' +
+        '</div>';
+    }).join("");
     var canStartService = !status.running && !status.reachable;
     var canStopService = !!status.running;
 
@@ -505,6 +996,11 @@
       '</div>' +
       '<button id="oclm-open-console" class="oclm-button oclm-button-primary' + ((status.running || status.reachable) ? '' : ' oclm-hidden') + '" type="button" data-open-console="1"' + (state.consoleReady ? '' : ' disabled') + '>' + openclawIcon("oclm-button-icon") + (state.consoleReady ? '打开控制台' : '控制台准备中…') + '</button>' +
       '<a id="oclm-open-community" class="oclm-button oclm-button-community" href="https://www.koolcenter.com/t/topic/19042" target="_blank" rel="noreferrer noopener">' + communityIcon("oclm-button-icon") + '玩家交流</a>' +
+      '<div id="oclm-service-actions" class="oclm-service-actions-row' + (showServiceActions ? '' : ' oclm-hidden') + '">' +
+      '<button id="oclm-btn-start" class="oclm-button oclm-button-service-start' + (canStartService ? '' : ' oclm-hidden') + '" type="button" data-op="start">启动服务</button>' +
+      '<button id="oclm-btn-stop" class="oclm-button oclm-button-service-stop' + (canStopService ? '' : ' oclm-hidden') + '" type="button" data-op="stop">停止服务</button>' +
+      '<button id="oclm-btn-restart" class="oclm-button oclm-button-service-restart" type="button" data-op="restart">重启服务</button>' +
+      '</div>' +
       '<button id="oclm-cancel-install" class="oclm-button oclm-button-danger' + (status.installing ? '' : ' oclm-hidden') + '" type="button" data-op="cancel_install">停止安装</button>' +
       '</div>' +
       '<div id="oclm-status-note" class="oclm-status-note' + (noteText ? '' : ' oclm-hidden') + '">' + escapeHtml(noteText) + '</div>' +
@@ -515,6 +1011,7 @@
       '<button class="oclm-tab' + (activeTab === "basic" ? ' is-active' : '') + '" type="button" data-tab="basic">基础配置</button>' +
       '<button class="oclm-tab' + (activeTab === "ai" ? ' is-active' : '') + '" type="button" data-tab="ai">AI配置</button>' +
       '<button class="oclm-tab' + (activeTab === "access" ? ' is-active' : '') + '" type="button" data-tab="access">访问控制</button>' +
+      '<button class="oclm-tab' + (activeTab === "security" ? ' is-active' : '') + '" type="button" data-tab="security">安全设置</button>' +
       '<button class="oclm-tab' + (activeTab === "version" ? ' is-active' : '') + '" type="button" data-tab="version">版本管理</button>' +
       '<button class="oclm-tab' + (activeTab === "cleanup" ? ' is-active' : '') + '" type="button" data-tab="cleanup">卸载清理</button>' +
       '</div>' +
@@ -527,14 +1024,10 @@
         ["loopback", "仅本机"],
         ["auto", "自动"]
       ])) +
-      fieldInput("数据目录", '<input class="oclm-control" type="text" id="oclm-base-dir" list="oclm-base-dir-options" value="' + escapeAttr(form.base_dir || "") + '" /><datalist id="oclm-base-dir-options">' + baseDirOptions + '</datalist>') +
+      fieldInput("数据目录", '<input class="oclm-control' + (formErrors.base_dir ? ' oclm-control-danger' : '') + '" type="text" id="oclm-base-dir" list="oclm-base-dir-options" value="' + escapeAttr(form.base_dir || "") + '" /><datalist id="oclm-base-dir-options">' + baseDirOptions + '</datalist>' +
+        '<div id="oclm-base-dir-error" class="oclm-security-error' + (formErrors.base_dir ? '' : ' oclm-hidden') + '">' + escapeHtml(formErrors.base_dir || "") + '</div>') +
       '<div class="oclm-section-submit">' +
       '<button class="oclm-button oclm-button-primary" type="button" id="oclm-save-basic"' + (savingBasic ? ' disabled' : '') + '>' + (savingBasic ? '应用中…' : '保存并应用') + '</button>' +
-      '<span id="oclm-service-actions" class="oclm-inline-buttons' + (showServiceActions ? '' : ' oclm-hidden') + '">' +
-      '<button id="oclm-btn-start" class="oclm-button' + (canStartService ? '' : ' oclm-hidden') + '" type="button" data-op="start">启动服务</button>' +
-      '<button id="oclm-btn-stop" class="oclm-button' + (canStopService ? '' : ' oclm-hidden') + '" type="button" data-op="stop">停止服务</button>' +
-      '<button id="oclm-btn-restart" class="oclm-button" type="button" data-op="restart">重启服务</button>' +
-      '</span>' +
       (state.lastAppliedAt ? '<span class="oclm-applied-hint">已于 ' + escapeHtml(state.lastAppliedAt) + ' 更新配置</span>' : '') +
       '</div>' +
       '</div></div>' +
@@ -553,7 +1046,7 @@
         : "如果你的供应商兼容 OpenAI 协议，可选择“自定义供应商”并在下方填写地址与模型。") + '</div>') +
       fieldInput("API 密钥", passwordHtml("oclm-api-key", form.provider_api_key || "", "sk-...")) +
       fieldInput(form.default_agent === "custom-provider" ? "服务地址" : "中转地址（可选）", '<input class="oclm-control" type="text" id="oclm-base-url" value="' + escapeHtml(form.provider_base_url || "") + '" placeholder="https://api.example.com" />') +
-      fieldInput("默认模型", '<input class="oclm-control" type="text" id="oclm-model" value="' + escapeAttr(resolveModelValue(form)) + '" placeholder="' + escapeAttr(modelPlaceholder(form.default_agent)) + '" /><div class="oclm-hint">将按照“供应商名称/模型名称”的格式保存</div>') +
+      fieldInput("默认模型", '<input class="oclm-control" type="text" id="oclm-model" value="' + escapeAttr(resolveModelValue(form)) + '" placeholder="' + escapeAttr(modelPlaceholder(form.default_agent)) + '" /><div class="oclm-hint">这里只填写模型名；例如 gpt-5.1</div>') +
       '<div class="oclm-section-submit"><button class="oclm-button oclm-button-primary" type="button" id="oclm-save-ai"' + (savingAi ? ' disabled' : '') + '>' + (savingAi ? '应用中…' : '保存 AI配置') + '</button>' + (state.lastAppliedAt ? '<span class="oclm-applied-hint">已于 ' + escapeHtml(state.lastAppliedAt) + ' 更新配置</span>' : '') + '</div>' +
       '</div></div>' +
 
@@ -568,6 +1061,37 @@
       fieldToggle("关闭设备身份校验", "disable_device_auth", form.disable_device_auth, "警告：仅建议在可信环境中开启，在内网生效") +
       '<div class="oclm-section-submit"><button class="oclm-button oclm-button-primary" type="button" id="oclm-save-access"' + (savingAccess ? ' disabled' : '') + '>' + (savingAccess ? '应用中…' : '保存访问控制设置') + '</button>' + (state.lastAppliedAt ? '<span class="oclm-applied-hint">已于 ' + escapeHtml(state.lastAppliedAt) + ' 更新配置</span>' : '') + '</div>' +
       '</div></div>' +
+
+      '<div class="' + (activeTab === "security" ? '' : 'oclm-hidden') + '">' +
+      '<div class="oclm-security-hero">' +
+      '<h3 class="oclm-security-hero-title">🔒 禁止访问目录</h3>' +
+      '<div class="oclm-hint">在 OpenClaw 以 ' + escapeHtml(security.runningUser) + ' 用户运行时禁止读取本地敏感目录。可能导致影响其他程序访问，请谨慎使用。</div>' +
+      '</div>' +
+      '<div class="oclm-security-stack">' +
+      '<div class="oclm-security-card">' +
+      '<div class="oclm-security-input-row">' +
+      '<div class="oclm-security-input-wrap">' +
+      '<input class="oclm-control' + (security.directoryError ? ' oclm-control-danger' : '') + '" type="text" id="oclm-security-path" value="' + escapeAttr(security.newDirectoryPath || "") + '" placeholder="/mnt/vio3-1/no-claw" />' +
+      '<div id="oclm-security-error" class="oclm-security-error' + (security.directoryError ? '' : ' oclm-hidden') + '">' + escapeHtml(security.directoryError || "") + '</div>' +
+      '<div class="oclm-hint">请输入绝对路径。不建议添加整个磁盘根目录或 OpenClaw 自身工作目录。</div>' +
+      '</div>' +
+      '<button class="oclm-button oclm-button-primary" type="button" id="oclm-security-add">添加目录</button>' +
+      '</div>' +
+      (security.protectedDirectories.length
+        ? '<div class="oclm-security-list-box"><div class="oclm-security-list">' + securityList + '</div></div>'
+        : '<div class="oclm-security-empty"><div class="oclm-security-empty-icon">🔒</div><div>暂无受保护的目录</div><div class="oclm-hint">添加目录以限制 OpenClaw 访问</div></div>') +
+      '</div>' +
+      '<div class="oclm-security-info-card">' +
+      '<h3>ℹ 使用说明</h3>' +
+      '<ul>' +
+      '<li>本功能通过 Linux 文件权限限制 openclawmgr 用户访问目录。</li>' +
+      '<li>本功能不是容器或沙箱隔离。</li>' +
+      '<li>修改目录权限后，可能影响其他服务或用户访问这些目录。</li>' +
+      '<li>请勿将 OpenClaw 的数据目录、程序目录加入禁止访问列表。</li>' +
+      '</ul>' +
+      '</div>' +
+      '</div>' +
+      '</div>' +
 
       '<div class="' + (activeTab === "version" ? '' : 'oclm-hidden') + '">' +
       '<div class="oclm-section-heading"><h2>版本管理</h2><div class="oclm-hint">openclaw 官方正在快速迭代，最新版本可能不兼容旧版本配置导致无法启动。请<a class="oclm-inline-link" href="https://www.koolcenter.com/t/topic/19042" target="_blank" rel="noreferrer noopener">加入交流群</a>了解最新稳定版本号</div></div>' +
@@ -593,10 +1117,10 @@
       '<button class="oclm-button oclm-button-danger" type="button" data-op="uninstall">卸载</button>' +
       '<button class="oclm-button oclm-button-danger" type="button" data-op="purge">彻底清理</button>' +
       '</div>' +
-      '</div>' +
       '</section>' +
       '</div></div></div>';
 
+    syncActionDialog();
     bindEvents();
   }
 
@@ -821,6 +1345,10 @@
 
     var newOriginEl = getEl("oclm-new-origin");
     if (newOriginEl) state.newOrigin = newOriginEl.value;
+
+    var securityPathEl = getEl("oclm-security-path");
+    if (securityPathEl) getSecurityState().newDirectoryPath = securityPathEl.value;
+
   }
 
   function bindEvents() {
@@ -845,7 +1373,7 @@
               showTaskLog(rv.running_task_id);
               return;
             }
-            window.alert((rv && rv.error) || "操作失败");
+            openNoticeDialog((rv && rv.error) || "操作失败");
             return;
           }
           state.lastTaskRunning = true;
@@ -858,12 +1386,12 @@
     Array.prototype.forEach.call(root.querySelectorAll("[data-open-console]"), function(el) {
       el.onclick = function() {
         if (!state.consoleReady) {
-          window.alert("控制台正在启动，请稍候再试。");
+          openNoticeDialog("控制台正在启动，请稍候再试。");
           return;
         }
         var url = (state.status && state.status.token_url) || "";
         if (!url) {
-          window.alert("控制台地址不可用");
+          openNoticeDialog("控制台地址不可用");
           return;
         }
         window.open(url, "_blank", "noreferrer");
@@ -877,7 +1405,7 @@
         var baseDirEl = root.getElementById("oclm-base-dir");
         var baseDir = baseDirEl && baseDirEl.value ? baseDirEl.value.trim() : "";
         if (!baseDir) {
-          window.alert("请先选择数据目录并保存应用，再执行安装。");
+          openNoticeDialog("请先选择数据目录并保存应用，再执行安装。");
           if (baseDirEl) baseDirEl.focus();
           return;
         }
@@ -892,7 +1420,7 @@
           if (!cfgRv || !cfgRv.ok) {
             state.status.installing = false;
             render();
-            window.alert((cfgRv && cfgRv.error) || "保存安装选项失败");
+            openNoticeDialog((cfgRv && cfgRv.error) || "保存安装选项失败");
             return;
           }
           state.form.install_accelerated = accelerated;
@@ -908,7 +1436,7 @@
             }
             state.status.installing = false;
             render();
-            window.alert((rv && rv.error) || "启动安装失败");
+            openNoticeDialog((rv && rv.error) || "启动安装失败");
             return;
           }
           state.lastTaskRunning = true;
@@ -917,7 +1445,7 @@
         }).catch(function() {
           state.status.installing = false;
           render();
-          window.alert("启动安装失败");
+          openNoticeDialog("启动安装失败");
         });
       };
     });
@@ -930,7 +1458,7 @@
         var baseDir = baseDirEl && baseDirEl.value ? baseDirEl.value.trim() : "";
         var op = (state.status && state.status.installed) ? "upgrade" : "install";
         if (!baseDir) {
-          window.alert("请先选择数据目录并保存应用，再执行安装。");
+          openNoticeDialog("请先选择数据目录并保存应用，再执行安装。");
           if (baseDirEl) baseDirEl.focus();
           return;
         }
@@ -947,7 +1475,7 @@
             state.status.task_running = false;
             state.status.task_op = "";
             render();
-            window.alert((cfgRv && cfgRv.error) || "保存安装选项失败");
+            openNoticeDialog((cfgRv && cfgRv.error) || "保存安装选项失败");
             return;
           }
           state.form.install_accelerated = accelerated;
@@ -965,7 +1493,7 @@
             state.status.task_running = false;
             state.status.task_op = "";
             render();
-            window.alert((rv && rv.error) || "启动安装失败");
+            openNoticeDialog((rv && rv.error) || "启动安装失败");
             return;
           }
           state.lastTaskRunning = true;
@@ -976,7 +1504,7 @@
           state.status.task_running = false;
           state.status.task_op = "";
           render();
-          window.alert("启动安装失败");
+          openNoticeDialog("启动安装失败");
         });
       };
     });
@@ -1000,7 +1528,7 @@
             updateCheck.localVersion = String((rv && rv.local_version) || (state.status && state.status.openclaw_version) || "");
             updateCheck.remoteVersion = String((rv && rv.remote_version) || "");
             render();
-            window.alert(updateCheck.error);
+            openNoticeDialog(updateCheck.error);
             return;
           }
           updateCheck.checked = true;
@@ -1015,7 +1543,7 @@
           updateCheck.hasUpdate = false;
           updateCheck.error = "检测更新失败";
           render();
-          window.alert("检测更新失败");
+          openNoticeDialog("检测更新失败");
         });
       };
     });
@@ -1060,11 +1588,11 @@
     if (agent) {
       agent.onchange = function() {
         syncDraftFromDom();
-        state.form.default_agent = agent.value;
-        state.form.default_model = modelForAgent(agent.value);
-        render();
-      };
-    }
+      state.form.default_agent = agent.value;
+      state.form.default_model = defaultModelForAgent(agent.value);
+      render();
+    };
+  }
 
     var apiKey = root.getElementById("oclm-api-key");
     if (apiKey) {
@@ -1125,13 +1653,98 @@
       };
     });
 
+    var securityPath = root.getElementById("oclm-security-path");
+    if (securityPath) {
+      securityPath.oninput = function() {
+        var security = getSecurityState();
+        security.newDirectoryPath = securityPath.value;
+        if (security.directoryError) {
+          security.directoryError = "";
+          securityPath.classList.remove("oclm-control-danger");
+          var errorEl = root.getElementById("oclm-security-error");
+          if (errorEl) {
+            errorEl.textContent = "";
+            errorEl.classList.add("oclm-hidden");
+          }
+        }
+      };
+    }
+
+    var securityAdd = root.getElementById("oclm-security-add");
+    if (securityAdd) {
+      securityAdd.onclick = function() {
+        var security = getSecurityState();
+        var path = securityPath && securityPath.value ? securityPath.value.replace(/^\s+|\s+$/g, "") : "";
+        var error = validateProtectedDirectory(path);
+        if (error) {
+          security.directoryError = error;
+          render();
+          return;
+        }
+        security.pendingAddPath = path;
+        render();
+      };
+    }
+
+    Array.prototype.forEach.call(root.querySelectorAll("[data-security-recheck]"), function(el) {
+      el.onclick = function() {
+        var id = el.getAttribute("data-security-recheck");
+        if (!id) return;
+        postJson(config.securityRecheckUrl, { id: id }).then(function(rv) {
+          if (!rv || !rv.ok) {
+            openNoticeDialog((rv && rv.error) || "重新检测失败");
+            return;
+          }
+          loadSecurityData();
+        }).catch(function() {
+          openNoticeDialog("重新检测失败");
+        });
+      };
+    });
+
+    Array.prototype.forEach.call(root.querySelectorAll("[data-security-delete]"), function(el) {
+      el.onclick = function() {
+        var id = el.getAttribute("data-security-delete");
+        if (!id) return;
+        var security = getSecurityState();
+        var target = null;
+        security.protectedDirectories.forEach(function(item) {
+          if (item.id === id) {
+            target = item;
+          }
+        });
+        if (!target) return;
+        security.deleteTargetId = id;
+        security.deleteTargetPath = target.path;
+        render();
+      };
+    });
+
     var saveBasic = root.getElementById("oclm-save-basic");
+    var baseDirInput = root.getElementById("oclm-base-dir");
+    if (baseDirInput) {
+      baseDirInput.oninput = function() {
+        var formErrors = getFormErrors();
+        if (formErrors.base_dir) {
+          formErrors.base_dir = "";
+          render();
+        }
+      };
+    }
     if (saveBasic) {
       saveBasic.onclick = function() {
+        var formErrors = getFormErrors();
+        var baseDirValue = root.getElementById("oclm-base-dir").value;
+        if (!String(baseDirValue || "").replace(/^\s+|\s+$/g, "")) {
+          formErrors.base_dir = "数据目录不能为空";
+          render();
+          return;
+        }
+        formErrors.base_dir = "";
         var payload = {
           port: root.getElementById("oclm-port").value,
           bind: root.getElementById("oclm-bind").value,
-          base_dir: root.getElementById("oclm-base-dir").value,
+          base_dir: baseDirValue,
           install_accelerated: !!(root.getElementById("oclm-install-accelerated") && root.getElementById("oclm-install-accelerated").checked),
         };
         state.savingSection = "basic";
@@ -1139,7 +1752,7 @@
         postJson(config.configUrl, payload).then(function(rv) { handleSaveResult(rv, "basic"); }).catch(function() {
           state.savingSection = "";
           render();
-          window.alert("保存失败");
+          openNoticeDialog("保存失败");
         });
       };
     }
@@ -1148,10 +1761,10 @@
     if (saveAi) {
       saveAi.onclick = function() {
         var agentValue = root.getElementById("oclm-agent").value;
-        var modelValue = normalizeModelValue(agentValue, root.getElementById("oclm-model").value);
+        var modelValue = normalizeModelValue(root.getElementById("oclm-model").value, defaultModelForAgent(agentValue));
         var baseUrlValue = root.getElementById("oclm-base-url").value;
         if (agentValue === "custom-provider" && !String(baseUrlValue || "").replace(/^\s+|\s+$/g, "")) {
-          window.alert("自定义供应商必须填写服务地址");
+          openNoticeDialog("自定义供应商必须填写服务地址");
           return;
         }
         var payload = {
@@ -1167,7 +1780,7 @@
         postJson(config.configUrl, payload).then(function(rv) { handleSaveResult(rv, "ai"); }).catch(function() {
           state.savingSection = "";
           render();
-          window.alert("保存失败");
+          openNoticeDialog("保存失败");
         });
       };
     }
@@ -1186,7 +1799,7 @@
         postJson(config.configUrl, payload).then(function(rv) { handleSaveResult(rv, "access"); }).catch(function() {
           state.savingSection = "";
           render();
-          window.alert("保存失败");
+          openNoticeDialog("保存失败");
         });
       };
     }
@@ -1194,16 +1807,25 @@
 
   function handleSaveResult(rv, section) {
     if (!rv || !rv.ok) {
+      var formErrors = getFormErrors();
       state.savingSection = "";
+      if (section === "basic" && isBaseDirErrorMessage(rv && rv.error)) {
+        formErrors.base_dir = (rv && rv.error) || "数据目录错误";
+        render();
+        return;
+      }
       render();
-      window.alert((rv && rv.error) || "保存失败");
+      openNoticeDialog((rv && rv.error) || "保存失败");
       return;
+    }
+    if (section === "basic") {
+      getFormErrors().base_dir = "";
     }
     postForm(config.applyUrl, {}).then(function(applyRv) {
       state.savingSection = "";
       if (!applyRv || !applyRv.ok) {
         render();
-        window.alert((applyRv && applyRv.error) || "应用配置失败");
+        openNoticeDialog((applyRv && applyRv.error) || "应用配置失败");
         loadConfig();
         scheduleStatusRefresh(3, 600);
         return;
@@ -1215,7 +1837,7 @@
     }).catch(function() {
       state.savingSection = "";
       render();
-      window.alert("应用配置失败");
+      openNoticeDialog("应用配置失败");
       loadConfig();
       scheduleStatusRefresh(3, 600);
     });
@@ -1282,11 +1904,13 @@
         }
       }
       render();
+      loadSecurityData();
       refreshStatus();
     }).catch(function() {
       state.form = state.form || {};
       state.options = state.options || { base_dir_choices: [] };
       render();
+      loadSecurityData();
     });
   }
 

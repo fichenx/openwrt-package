@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 -include $(dir $(lastword $(MAKEFILE_LIST)))../version.mk
 
 PKG_NAME:=easytier
-PKG_VERSION:=$(or $(EASYTIER_VERSION),2.5.0)
+PKG_VERSION:=$(or $(EASYTIER_VERSION),2.6.2)
 
 ifeq ($(ARCH),mipsel)
 	APP_ARCH:=mipsel
@@ -36,6 +36,8 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
+RSTRIP:=:
+
 define Package/$(PKG_NAME)
 	SECTION:=net
 	CATEGORY:=Network
@@ -53,15 +55,19 @@ define Package/$(PKG_NAME)/config
 	config EASYTIER_INCLUDE_WEBCONSOLE
 		bool "Include Web Console (easytier-web)"
 		depends on PACKAGE_$(PKG_NAME)
-		depends on !@(mips||mipsel)
+		depends on !(mips || mipsel)
 		default y
 		help
 		  Install the easytier-web web console.
 endef
 
 define Build/Prepare
-	[ ! -f $(PKG_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION).zip ] && wget https://github.com/EasyTier/EasyTier/releases/download/v$(PKG_VERSION)/$(PKG_NAME)-linux-$(APP_ARCH)-v$(PKG_VERSION).zip -O $(PKG_NAME)-$(PKG_VERSION).zip
-	unzip -j $(PKG_NAME)-$(PKG_VERSION).zip -d $(PKG_BUILD_DIR)
+	mkdir -p $(PKG_BUILD_DIR)
+	if [ ! -f $(PKG_BUILD_DIR)/easytier-core ]; then \
+		wget https://github.com/EasyTier/EasyTier/releases/download/v$(PKG_VERSION)/$(PKG_NAME)-linux-$(APP_ARCH)-v$(PKG_VERSION).zip -O $(PKG_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION).zip; \
+		unzip -o -j $(PKG_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION).zip -d $(PKG_BUILD_DIR); \
+		rm -f $(PKG_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION).zip; \
+	fi
 endef
 
 define Build/Compile
@@ -69,10 +75,13 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/easytier-core $(1)/usr/bin/easytier-core
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/easytier-cli $(1)/usr/bin/easytier-cli
+	$(CP) $(PKG_BUILD_DIR)/easytier-core $(1)/usr/bin/
+	chmod 0755 $(1)/usr/bin/easytier-core
+	$(CP) $(PKG_BUILD_DIR)/easytier-cli $(1)/usr/bin/
+	chmod 0755 $(1)/usr/bin/easytier-cli
 ifdef CONFIG_EASYTIER_INCLUDE_WEBCONSOLE
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/easytier-web-embed $(1)/usr/bin/easytier-web
+	$(CP) $(PKG_BUILD_DIR)/easytier-web-embed $(1)/usr/bin/easytier-web
+	chmod 0755 $(1)/usr/bin/easytier-web
 endif
 endef
 

@@ -259,6 +259,7 @@ export function parseListener(cfg, isClient, label) {
 		/* Mieru */
 		transport: cfg.mieru_transport,
 		"traffic-pattern": cfg.mieru_traffic_pattern,
+		"user-hint-is-mandatory": strToBool(cfg.mieru_user_hint_is_mandatory),
 
 		/* Sudoku */
 		key: cfg.sudoku_key,
@@ -321,6 +322,7 @@ export function parseListener(cfg, isClient, label) {
 
 		/* Extra fields */
 		"congestion-controller": cfg.congestion_controller,
+		"bbr-profile": cfg.bbr_profile,
 		network: cfg.network,
 		udp: strToBool(cfg.udp),
 
@@ -345,8 +347,17 @@ export function parseListener(cfg, isClient, label) {
 
 		/* Transport fields */
 		...(cfg.transport_enabled === '1' ? {
-			"grpc-service-name": cfg.transport_grpc_servicename,
-			"ws-path": cfg.transport_path
+			"grpc-service-name": cfg.transport_type === 'grpc' ? cfg.transport_grpc_servicename : null,
+			"ws-path": cfg.transport_type === 'ws' ? cfg.transport_path : null,
+			"xhttp-config": cfg.transport_type === 'xhttp' ? {
+				path: cfg.transport_path,
+				host: cfg.transport_host,
+				mode: cfg.transport_xhttp_mode,
+				"no-sse-header": strToBool(cfg.transport_xhttp_no_sse_header),
+				"sc-max-buffered-posts": strToInt(cfg.transport_xhttp_sc_max_buffered_posts) || null,
+				"sc-stream-up-server-secs": cfg.transport_xhttp_sc_stream_up_server_secs,
+				"sc-max-each-post-bytes": strToInt(cfg.transport_xhttp_sc_max_each_post_bytes) || null,
+			} : null
 		} : {})
 	}
 };

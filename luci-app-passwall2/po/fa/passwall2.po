@@ -121,6 +121,12 @@ msgstr "0 به معنای عدم استفاده است"
 msgid "Current node: %s"
 msgstr "گره فعلی: %s"
 
+msgid "Direct domain DNS routing"
+msgstr "مسیریابی مستقیم DNS دامنه"
+
+msgid "Please note that the program will not start if the format is incorrect!"
+msgstr "لطفا توجه داشته باشید که اگر قالب نادرست باشد، برنامه شروع نخواهد شد!"
+
 msgid "IP:Port mode acceptable, multi value split with english comma."
 msgstr "حالت IP:Port قابل قبول است، مقادیر متعدد را با کاما انگلیسی جدا کنید."
 
@@ -1638,14 +1644,14 @@ msgstr "اندازه بافر"
 msgid "Buffer size for every connection (kB)"
 msgstr "اندازه بافر برای هر اتصال (کیلوبایت)"
 
-msgid "Handshake Timeout"
-msgstr "مهلت زمانی دست تکان دادن"
-
 msgid "Idle Timeout"
 msgstr "مهلت زمانی بیکاری"
 
-msgid "Hop Interval"
-msgstr "بازه پرش (Hop)"
+msgid "Hop Interval(second)"
+msgstr "فاصله پرش (ثانیه)"
+
+msgid "Supports a fixed value or a random range (e.g., 30, 5-30), minimum 5."
+msgstr "از یک مقدار ثابت یا یک محدوده تصادفی (مثلاً 30، 5-30)، حداقل 5، پشتیبانی می‌کند."
 
 msgid "HeartbeatPeriod(second)"
 msgstr "دوره ضربان قلب (ثانیه)"
@@ -1764,6 +1770,15 @@ msgstr "تاخیر (میلی‌ثانیه)"
 msgid "If is domain name, The requested domain name will be resolved to IP before connect."
 msgstr "اگر نام دامنه است، نام دامنه درخواست شده قبل از اتصال به IP حل می‌شود."
 
+msgid "Domain DNS Resolve"
+msgstr "حل مشکل DNS دامنه"
+
+msgid "If the node address is a domain name, this DNS will be used for resolution."
+msgstr "اگر آدرس گره یک نام دامنه باشد، از این DNS برای حل مسئله استفاده خواهد شد."
+
+msgid "Supports only Xray or Sing-box node types."
+msgstr "فقط گره‌های نوع Xray یا Sing-box پشتیبانی می‌شوند."
+
 msgid "Chain Proxy"
 msgstr "پروکسی زنجیره‌ای"
 
@@ -1779,9 +1794,6 @@ msgid ""
 msgstr ""
 "پروکسی زنجیره‌ای فقط با گره‌های Xray یا Sing-box کار می‌کند.<br>"
 "شما فقط می‌توانید از گره‌های دستی یا وارد شده به عنوان گره‌های زنجیره‌ای استفاده کنید."
-
-msgid "Set the default domain resolution strategy for the sing-box node."
-msgstr "تنظیم استراتژی پیش‌فرض حل دامنه برای گره sing-box."
 
 msgid "Prefer IPv4"
 msgstr "ترجیح IPv4"
@@ -2218,6 +2230,12 @@ msgstr "ورودی %s:%s"
 msgid "Node: %s:%s, Weight: %s"
 msgstr "گره: %s:%s، وزن: %s"
 
+msgid "[Rule update] instance is running; please try again later."
+msgstr "نمونه [به‌روزرسانی قانون] در حال اجرا است؛ لطفاً بعداً دوباره امتحان کنید."
+
+msgid "[Subscription] instance is running; [Rule Update] queue and wait."
+msgstr "نمونه [اشتراک] در حال اجرا است؛ [به‌روزرسانی قانون] در صف انتظار قرار می‌گیرد."
+
 msgid "Start updating the rules..."
 msgstr "شروع به‌روزرسانی قوانین..."
 
@@ -2370,6 +2388,12 @@ msgstr "دریافت محتوای اشتراک برای [%s] خالی است. ا
 
 msgid "Proxy"
 msgstr "پروکسی"
+
+msgid "[Subscription] instance is running; please try again later."
+msgstr "نمونه [اشتراک] در حال اجرا است؛ لطفاً بعداً دوباره امتحان کنید."
+
+msgid "[Rule Update] instance is running; [Subscription] queue and wait."
+msgstr "نمونه [به‌روزرسانی قانون] در حال اجرا است؛ [اشتراک] در صف انتظار قرار دارد."
 
 msgid "Start subscribing..."
 msgstr "شروع اشتراک‌گیری..."

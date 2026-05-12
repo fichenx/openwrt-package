@@ -546,7 +546,7 @@ load_acl() {
 			$ipt_m -A PSW2 $(comment "${comment_d}") -p udp $(REDIRECT $REDIR_PORT TPROXY)
 
 			[ "$PROXY_IPV6" == "1" ] && {
-				$ip6t_m -I PSW2 $(comment "${comment_d}") -p udp -d $(dst $IPSET_PROXY_LAN6) -j PSW2_RULE
+				$ip6t_m -I PSW2 $(comment "${comment_d}") -p udp $(dst $IPSET_PROXY_LAN6) -j PSW2_RULE
 				$ip6t_m -A PSW2 $(comment "${comment_d}") -p udp -d $FAKE_IP_6 -j PSW2_RULE
 				add_shunt_t_rule "${SHUNT_LIST6}" "$ip6t_m -A PSW2 $(comment "${comment_d}") -p udp" "-j PSW2_RULE" $UDP_REDIR_PORTS
 				add_port_rules "$ip6t_m -A PSW2 $(comment "${comment_d}") -p udp" $UDP_REDIR_PORTS "-j PSW2_RULE"
@@ -617,6 +617,24 @@ filter_direct_node_list() {
 	done
 }
 
+update_wan_sets() {
+	local WAN_IP=$(get_wan_ips ip4)
+	[ -n "$WAN_IP" ] && {
+		ipset -F "$IPSET_WAN"
+		for wan_ip in $WAN_IP; do
+			ipset -! add "$IPSET_WAN" "$wan_ip"
+		done
+	}
+
+	local WAN6_IP=$(get_wan_ips ip6)
+	[ -n "$WAN6_IP" ] && {
+		ipset -F "$IPSET_WAN6"
+		for wan6_ip in $WAN6_IP; do
+			ipset -! add "$IPSET_WAN6" "$wan6_ip"
+		done
+	}
+}
+
 add_firewall_rule() {
 	log_i18n 0 "Starting to load %s firewall rules..." "iptables"
 	
@@ -631,13 +649,9 @@ add_firewall_rule() {
 	ipset -! create $IPSET_LAN6 nethash family inet6 maxelem 1048576
 	ipset -! create $IPSET_VPS6 nethash family inet6 maxelem 1048576
 	ipset -! create $IPSET_WAN6 nethash family inet6 maxelem 1048576
-	
-	ipset -! -R <<-EOF
-		$(ip address show | grep -w "inet" | awk '{print $2}' | awk -F '/' '{print $1}' | sed -e "s/^/add $IPSET_LOCAL /")
-	EOF
-	ipset -! -R <<-EOF
-		$(ip address show | grep -w "inet6" | awk '{print $2}' | awk -F '/' '{print $1}' | sed -e "s/^/add $IPSET_LOCAL6 /")
-	EOF
+
+	get_local_ips ip4 | sed "s/^/add $IPSET_LOCAL /" | ipset -! -R
+	get_local_ips ip6 | sed "s/^/add $IPSET_LOCAL6 /" | ipset -! -R
 
 	ipset -! -R <<-EOF
 		$(gen_lanlist | sed -e "s/^/add $IPSET_LAN /")
@@ -664,6 +678,8 @@ add_firewall_rule() {
 			$(echo $lan_ip6 | sed -e "s/ /\n/g" | sed -e "s/^/add $IPSET_LAN6 /")
 		EOF
 	}
+
+	update_wan_sets
 
 	[ -n "$ISP_DNS" ] && {
 		for ispip in $ISP_DNS; do
@@ -716,6 +732,7 @@ add_firewall_rule() {
 	$ipt_n -N PSW2
 	$ipt_n -A PSW2 $(dst $IPSET_LAN) -j RETURN
 	$ipt_n -A PSW2 $(dst $IPSET_VPS) -j RETURN
+	$ipt_n -A PSW2 $(comment "WAN_IP_RETURN") $(dst $IPSET_WAN) -j RETURN
 	
 	[ "$accept_icmp" = "1" ] && insert_rule_after "$ipt_n" "PREROUTING" "prerouting_rule" "-p icmp -j PSW2"
 	[ -z "${is_tproxy}" ] && insert_rule_after "$ipt_n" "PREROUTING" "prerouting_rule" "-p tcp -j PSW2"
@@ -728,9 +745,9 @@ add_firewall_rule() {
 	$ipt_n -N PSW2_DNS
 	if [ $(config_t_get global dns_redirect "1") = "0" ]; then
 		#Only hijack when dest address is local IP
-		$ipt_n -I PREROUTING $(dst $IPSET_LOCAL) -j PSW2_DNS
+		$ipt_n -I PREROUTING -m set --match-set $IPSET_LAN src $(dst $IPSET_LOCAL) -j PSW2_DNS
 	else
-		$ipt_n -I PREROUTING -j PSW2_DNS
+		$ipt_n -I PREROUTING -m set --match-set $IPSET_LAN src -j PSW2_DNS
 	fi
 
 	$ipt_m -N PSW2_DIVERT
@@ -747,18 +764,8 @@ add_firewall_rule() {
 	$ipt_m -N PSW2
 	$ipt_m -A PSW2 $(dst $IPSET_LAN) -j RETURN
 	$ipt_m -A PSW2 $(dst $IPSET_VPS) -j RETURN
+	$ipt_m -A PSW2 $(comment "WAN_IP_RETURN") $(dst $IPSET_WAN) -j RETURN
 	$ipt_m -A PSW2 -m conntrack --ctdir REPLY -j RETURN
-
-	WAN_IP=$(get_wan_ips ip4)
-	[ -n "${WAN_IP}" ] && {
-		ipset -F $IPSET_WAN
-		for wan_ip in $WAN_IP; do
-			ipset -! add $IPSET_WAN ${wan_ip}
-		done
-		$ipt_n -A PSW2 $(comment "WAN_IP_RETURN") $(dst $IPSET_WAN) -j RETURN
-		$ipt_m -A PSW2 $(comment "WAN_IP_RETURN") $(dst $IPSET_WAN) -j RETURN
-	}
-	unset WAN_IP wan_ip
 
 	insert_rule_before "$ipt_m" "PREROUTING" "mwan3" "-j PSW2"
 	# Only TCP, UDP Invalid.
@@ -768,14 +775,6 @@ add_firewall_rule() {
 	$ipt_m -A PSW2_OUTPUT $(dst $IPSET_LAN) -j RETURN
 	$ipt_m -A PSW2_OUTPUT $(dst $IPSET_VPS) -j RETURN
 	$ipt_m -A PSW2_OUTPUT -m conntrack --ctdir REPLY -j RETURN
-	[ -n "$AUTO_DNS" ] && {
-		for auto_dns in $(echo $AUTO_DNS | tr ',' ' '); do
-			local dns_address=$(echo $auto_dns | awk -F '#' '{print $1}')
-			local dns_port=$(echo $auto_dns | awk -F '#' '{print $2}')
-			$ipt_m -A PSW2_OUTPUT -p udp -d ${dns_address} --dport ${dns_port:-53} -j RETURN
-			log_i18n 1 "$(i18n "Add direct DNS to %s: %s" "iptables" "${dns_address}:${dns_port:-53}")"
-		done
-	}
 	$ipt_m -A PSW2_OUTPUT -m mark --mark 255 -j RETURN
 
 	ip rule add fwmark ${FWMARK} table 999 priority 999
@@ -796,9 +795,9 @@ add_firewall_rule() {
 	$ip6t_n -N PSW2_DNS
 	if [ $(config_t_get global dns_redirect "1") = "0" ]; then
 		#Only hijack when dest address is local IP
-		$ip6t_n -I PREROUTING $(dst $IPSET_LOCAL6) -j PSW2_DNS
+		$ip6t_n -I PREROUTING -m set --match-set $IPSET_LAN6 src $(dst $IPSET_LOCAL6) -j PSW2_DNS
 	else
-		$ip6t_n -I PREROUTING -j PSW2_DNS
+		$ip6t_n -I PREROUTING -m set --match-set $IPSET_LAN6 src -j PSW2_DNS
 	fi
 
 	$ip6t_m -N PSW2_DIVERT
@@ -815,17 +814,8 @@ add_firewall_rule() {
 	$ip6t_m -N PSW2
 	$ip6t_m -A PSW2 $(dst $IPSET_LAN6) -j RETURN
 	$ip6t_m -A PSW2 $(dst $IPSET_VPS6) -j RETURN
+	$ip6t_m -A PSW2 $(comment "WAN6_IP_RETURN") $(dst $IPSET_WAN6) -j RETURN
 	$ip6t_m -A PSW2 -m conntrack --ctdir REPLY -j RETURN
-	
-	WAN6_IP=$(get_wan_ips ip6)
-	[ -n "${WAN6_IP}" ] && {
-		ipset -F $IPSET_WAN6
-		for wan6_ip in $WAN6_IP; do
-			ipset -! add $IPSET_WAN6 ${wan6_ip}
-		done
-		$ip6t_m -A PSW2 $(comment "WAN6_IP_RETURN") $(dst $IPSET_WAN6) -j RETURN
-	}
-	unset WAN6_IP wan6_ip
 
 	insert_rule_before "$ip6t_m" "PREROUTING" "mwan3" "-j PSW2"
 	# Only TCP, UDP Invalid.
@@ -836,6 +826,20 @@ add_firewall_rule() {
 	$ip6t_m -A PSW2_OUTPUT $(dst $IPSET_LAN6) -j RETURN
 	$ip6t_m -A PSW2_OUTPUT $(dst $IPSET_VPS6) -j RETURN
 	$ip6t_m -A PSW2_OUTPUT -m conntrack --ctdir REPLY -j RETURN
+
+	[ -n "$AUTO_DNS" ] && {
+		for auto_dns in $(echo $AUTO_DNS | tr ',' ' '); do
+			local dns_address=$(echo $auto_dns | awk -F '#' '{print $1}')
+			local dns_port=$(echo $auto_dns | awk -F '#' '{print $2}')
+			if [[ "$dns_address" == *::* ]]; then
+				$ip6t_m -I PSW2_OUTPUT -p udp -d ${dns_address} --dport ${dns_port:-53} -j RETURN
+				log_i18n 1 "$(i18n "Add direct DNS to %s: %s" "ip6tables" "[${dns_address}]:${dns_port:-53}")"
+			else
+				$ipt_m -I PSW2_OUTPUT -p udp -d ${dns_address} --dport ${dns_port:-53} -j RETURN
+				log_i18n 1 "$(i18n "Add direct DNS to %s: %s" "iptables" "${dns_address}:${dns_port:-53}")"
+			fi
+		done
+	}
 
 	ip -6 rule add fwmark ${FWMARK} table 999 priority 999
 	ip -6 route add local ::/0 dev lo table 999
@@ -1044,7 +1048,7 @@ gen_include() {
 	local __ipt=""
 	[ -n "${ipt}" ] && {
 		__ipt=$(cat <<- EOF
-			. $UTILS_PATH
+			${MY_PATH} update_wan_sets
 			$ipt-save -c | grep -v "PSW2" | $ipt-restore -c
 			$ipt-restore -n <<-EOT
 			$(extract_rules 4 nat)
@@ -1056,21 +1060,13 @@ gen_include() {
 
 			\$(${MY_PATH} insert_rule_before "$ipt_m" "PREROUTING" "mwan3" "-j PSW2")
 			\$(${MY_PATH} insert_rule_before "$ipt_m" "PREROUTING" "PSW2" "-p tcp -m socket -j PSW2_DIVERT")
-
-			WAN_IP=\$(get_wan_ips ip4)
-			[ ! -z "\${WAN_IP}" ] && {
-				ipset -F $IPSET_WAN
-				for wan_ip in \$WAN_IP; do
-					ipset -! add $IPSET_WAN \${wan_ip}
-				done
-			}
 		EOF
 		)
 	}
 	local __ip6t=""
 	[ -n "${ip6t}" ] && {
 		__ip6t=$(cat <<- EOF
-			. $UTILS_PATH
+			${MY_PATH} update_wan_sets
 			$ip6t-save -c | grep -v "PSW2" | $ip6t-restore -c
 			$ip6t-restore -n <<-EOT
 			$(extract_rules 6 nat)
@@ -1081,20 +1077,12 @@ gen_include() {
 
 			\$(${MY_PATH} insert_rule_before "$ip6t_m" "PREROUTING" "mwan3" "-j PSW2")
 			\$(${MY_PATH} insert_rule_before "$ip6t_m" "PREROUTING" "PSW2" "-p tcp -m socket -j PSW2_DIVERT")
-
-			WAN6_IP=\$(get_wan_ips ip6)
-			[ ! -z "\${WAN6_IP}" ] && {
-				ipset -F $IPSET_WAN6
-				for wan6_ip in \$WAN6_IP; do
-					ipset -! add $IPSET_WAN6 \${wan6_ip}
-				done
-			}
 		EOF
 		)
 	}
 	cat <<-EOF >> $FWI
 		${__ipt}
-		
+
 		${__ip6t}
 		
 		return 0
@@ -1151,6 +1139,9 @@ get_ip6t_bin)
 	;;
 filter_direct_node_list)
 	filter_direct_node_list
+	;;
+update_wan_sets)
+	update_wan_sets "$@"
 	;;
 stop)
 	stop

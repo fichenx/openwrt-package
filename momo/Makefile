@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=momo
-PKG_VERSION:=2026.03.29
+PKG_VERSION:=2026.04.09
 PKG_RELEASE:=1
 
 PKG_LICENSE:=GPL-3.0+
@@ -12,13 +12,9 @@ include $(INCLUDE_DIR)/package.mk
 define Package/momo
   SECTION:=net
   CATEGORY:=Network
-  TITLE:=The universal proxy platform.
-  URL:=https://sing-box.sagernet.org
+  TITLE:=Transparent Proxy with sing-box on OpenWrt.
+  URL:=https://github.com/nikkinikki-org
   DEPENDS:=+ca-bundle +curl firewall4 +ip-full +kmod-inet-diag +kmod-nft-socket +kmod-nft-tproxy +kmod-tun +kmod-dummy +sing-box
-endef
-
-define Package/momo/description
-  The universal proxy platform.
 endef
 
 define Package/momo/conffiles
@@ -35,6 +31,7 @@ define Package/momo/install
 	$(INSTALL_DIR) $(1)/etc/momo/run
 
 	$(INSTALL_BIN) $(CURDIR)/files/ucode/include.uc $(1)/etc/momo/ucode/include.uc
+	$(INSTALL_BIN) $(CURDIR)/files/ucode/mixin.uc $(1)/etc/momo/ucode/mixin.uc
 	$(INSTALL_BIN) $(CURDIR)/files/ucode/hijack.ut $(1)/etc/momo/ucode/hijack.ut
 
 	$(INSTALL_BIN) $(CURDIR)/files/scripts/include.sh $(1)/etc/momo/scripts/include.sh
@@ -52,10 +49,21 @@ define Package/momo/install
 
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_BIN) $(CURDIR)/files/uci-defaults/firewall.sh $(1)/etc/uci-defaults/99_firewall_momo
+	$(INSTALL_BIN) $(CURDIR)/files/uci-defaults/init.sh $(1)/etc/uci-defaults/99_init_momo
 	$(INSTALL_BIN) $(CURDIR)/files/uci-defaults/migrate.sh $(1)/etc/uci-defaults/99_migrate_momo
 
 	$(INSTALL_DIR) $(1)/lib/upgrade/keep.d
 	$(INSTALL_DATA) $(CURDIR)/files/momo.upgrade $(1)/lib/upgrade/keep.d/momo
+endef
+
+define Package/momo/postrm
+#!/bin/sh
+if [ -z $${IPKG_INSTROOT} ]; then
+	uci -q batch <<-EOF > /dev/null
+		del firewall.momo
+		commit firewall
+	EOF
+fi
 endef
 
 define Build/Compile

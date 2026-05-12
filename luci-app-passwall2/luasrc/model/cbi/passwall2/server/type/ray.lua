@@ -357,30 +357,8 @@ o = s:option(Value, _n("mkcp_domain"), translate("Camouflage Domain"), translate
 o:depends({ [_n("mkcp_guise")] = "dns" })
 
 o = s:option(Value, _n("mkcp_mtu"), translate("KCP MTU"))
-o.default = "1350"
-o:depends({ [_n("transport")] = "mkcp" })
-
-o = s:option(Value, _n("mkcp_tti"), translate("KCP TTI"))
-o.default = "20"
-o:depends({ [_n("transport")] = "mkcp" })
-
-o = s:option(Value, _n("mkcp_uplinkCapacity"), translate("KCP uplinkCapacity"))
-o.default = "5"
-o:depends({ [_n("transport")] = "mkcp" })
-
-o = s:option(Value, _n("mkcp_downlinkCapacity"), translate("KCP downlinkCapacity"))
-o.default = "20"
-o:depends({ [_n("transport")] = "mkcp" })
-
-o = s:option(Flag, _n("mkcp_congestion"), translate("KCP Congestion"))
-o:depends({ [_n("transport")] = "mkcp" })
-
-o = s:option(Value, _n("mkcp_readBufferSize"), translate("KCP readBufferSize"))
-o.default = "1"
-o:depends({ [_n("transport")] = "mkcp" })
-
-o = s:option(Value, _n("mkcp_writeBufferSize"), translate("KCP writeBufferSize"))
-o.default = "1"
+o.datatype = "uinteger"
+o.default = 1350
 o:depends({ [_n("transport")] = "mkcp" })
 
 o = s:option(Value, _n("mkcp_seed"), translate("KCP Seed"))
