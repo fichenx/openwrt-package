@@ -51,6 +51,8 @@ rm -rf sing-box xray-plugin
 #git_sparse_clone main https://github.com/xiaorouji/openwrt-passwall-packages pdnsd-alt sing-box ssocks trojan-go trojan-plus geoview
 #git_sparse_clone main https://github.com/xiaorouji/openwrt-passwall-packages sing-box xray-plugin
 git_sparse_clone master https://github.com/immortalwrt/packages net/sing-box net/xray-plugin
+sed -i 's#../../#$(TOPDIR)/feeds/packages/#g' sing-box/Makefile
+sed -i 's#../../#$(TOPDIR)/feeds/packages/#g' xray-plugin/Makefile
 #git_sparse_clone master https://github.com/fw876/helloworld naiveproxy dns2tcp lua-neturl redsocks2 shadowsocks-libev shadowsocksr-libev v2ray-geodata chinadns-ng dns2socks hysteria ipt2socks microsocks shadowsocks-rust simple-obfs tcping trojan v2ray-core v2ray-plugin
 
 #rm -rf brook dockerd gost smartdns xray-core xray-plugin
