@@ -159,6 +159,9 @@ rm -rf luci-app-homeproxy
 #####shadowsocks-libev (ss-local ss-redir ss-tunnel ss-server)#####
 git_sparse_clone master https://github.com/fw876/helloworld shadowsocks-libev
 
+#####替换luci-app-amlogic为lua版本#####
+rm -rf luci-app-amlogic
+git_sparse_clone lua https://github.com/ophub/luci-app-amlogic luci-app-amlogic
 
 ############暂时替换原kenzok8/small-package/.github/diy/main.sh中无法使用的svn命令############
 git_sparse_clone master https://github.com/immortalwrt/luci applications/luci-app-homeproxy
