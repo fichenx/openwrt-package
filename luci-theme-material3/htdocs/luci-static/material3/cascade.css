@@ -2287,16 +2287,15 @@ body.sidebar-open header {
 		width: 100%;
 		min-width: 100%;
 	}
+}
 
-	.cbi-dropdown[open].btn>ul.dropdown,
-	.cbi-dropdown[open].cbi-button>ul.dropdown {
-		left: 0 !important;
-		right: auto !important;
-		width: max-content;
-		max-width: calc(100vw - 24px);
-		min-width: 100%;
-	}
-
+.cbi-dropdown[open].btn>ul.dropdown,
+.cbi-dropdown[open].cbi-button>ul.dropdown {
+	left: 0 !important;
+	right: auto !important;
+	width: max-content;
+	max-width: calc(100vw - 24px);
+	min-width: 100%;
 }
 
 .nav {
@@ -2533,6 +2532,34 @@ li.menu,
 
 .nav>li:has(> .dropdown-menu > li.active)>a {
 	color: var(--text-color-highest) !important;
+}
+
+@media (hover: none), (pointer: coarse), (any-pointer: coarse) {
+	.nav>li:not(.active)>a:hover {
+		background: transparent;
+		color: var(--text-color-high);
+	}
+
+	.nav>li:not(.active)>a:hover::before {
+		background-color: var(--text-color-medium);
+	}
+
+	.nav>li:not(.active)>a:hover::after {
+		border-color: var(--text-color-medium);
+	}
+
+	.nav .dropdown-menu>li:not(.active):hover {
+		background: transparent;
+	}
+
+	.nav .dropdown-menu>li:not(.active)>a:hover {
+		color: var(--text-color-medium) !important;
+	}
+
+	.nav a:hover>.nav-menu-title {
+		-webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent);
+		mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent);
+	}
 }
 
 .ripple {
@@ -4693,12 +4720,19 @@ div.cbi-value var.cbi-tooltip-container,
 	filter: invert(1) brightness(1.65) contrast(.82) opacity(.9);
 }
 
+[data-darkmode="true"] body[data-page^="admin-services-dockerman"] img[src*="dockerman/containers.svg"][src$=".svg"],
+[data-mode="dark"] body[data-page^="admin-services-dockerman"] img[src*="dockerman/containers.svg"][src$=".svg"] {
+	filter: none !important;
+	opacity: .96;
+}
+
 body[data-page^="admin-services-dockerman"] #view a[href*="/dockerman/"] {
 	color: inherit;
 }
 
 body[data-page^="admin-services-dockerman"] #view div[style*="grid-template-columns"][style*="minmax(300px"] {
 	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+	gap: 10px !important;
 }
 
 body[data-page^="admin-services-dockerman"] #view a[href*="/dockerman/"]>div[style*="min-height: 120px"] {
