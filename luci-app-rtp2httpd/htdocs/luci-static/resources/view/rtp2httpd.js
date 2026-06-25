@@ -755,6 +755,18 @@ return view.extend({
 
     o = s.taboption(
       "advanced",
+      form.Flag,
+      "use_relative_path_in_m3u",
+      _("Use Relative Paths in M3U"),
+      _(
+        "When enabled, generated and rewritten M3U playlists omit the http://host prefix and use root-relative paths."
+      )
+    );
+    o.default = "0";
+    o.depends("use_config_file", "0");
+
+    o = s.taboption(
+      "advanced",
       form.Value,
       "hostname",
       _("Hostname"),
@@ -796,6 +808,28 @@ return view.extend({
       )
     );
     o.default = "0";
+    o.depends("use_config_file", "0");
+
+    o = s.taboption(
+      "advanced",
+      form.Value,
+      "access_log",
+      _("Access Log Path"),
+      _("Write one access log line for each media request. Leave empty to disable access logging.")
+    );
+    o.placeholder = "/tmp/rtp2httpd-access.log";
+    o.depends("use_config_file", "0");
+
+    o = s.taboption(
+      "advanced",
+      form.Value,
+      "log_format",
+      _("Access Log Format"),
+      _(
+        "Nginx-style access log format. Empty uses the default format. Supported variables include $client_addr, $time_iso8601, $service_url, $service_type and $upstream_url."
+      )
+    );
+    o.placeholder = '$client_addr [$time_iso8601] "$service_url" $service_type "$upstream_url"';
     o.depends("use_config_file", "0");
 
     o = s.taboption(
