@@ -501,7 +501,7 @@ uci.foreach(uciconf, ucinode, (cfg) => {
 		"target-rematch-name": cfg.target_rematch_name,
 		"target-sub-rule": cfg.target_sub_rule,
 
-		/* HTTP / SOCKS / Shadowsocks / VMess / VLESS / Trojan / TUIC / hysteria2 / ShadowQUIC / WireGuard / Masque */
+		/* HTTP / SOCKS / Shadowsocks / VMess / VLESS / Trojan / TUIC / hysteria2 / WireGuard / Masque */
 		username: cfg.username,
 		uuid: cfg.vmess_uuid || cfg.uuid,
 		cipher: cfg.vmess_chipher || cfg.shadowsocks_chipher,
@@ -529,7 +529,7 @@ uci.foreach(uciconf, ucinode, (cfg) => {
 		"padding-max": strToInt(cfg.sudoku_padding_max),
 		"table-type": cfg.sudoku_table_type,
 		"custom-tables": cfg.sudoku_custom_tables,
-		"enable-pure-downlink": (cfg.sudoku_enable_pure_downlink === '0') ? false : true,
+		"enable-pure-downlink": (cfg.sudoku_enable_pure_downlink === '0') ? false : null,
 		...(cfg.type === 'sudoku' ? {
 			httpmask: (cfg.sudoku_http_mask === '0') ? { disable: true } : {
 				disable: false,
@@ -602,13 +602,18 @@ uci.foreach(uciconf, ucinode, (cfg) => {
 		} : null,
 
 		/* ShadowQUIC */
+		...(cfg.type === 'shadowquic' ? {
+			username: cfg.plugin_opts_thetlsusername,
+			password: cfg.plugin_opts_thetlspassword,
+			sni: cfg.plugin_opts_host
+		} : {}),
 		"quic-versions": cfg.shadowquic_quic_versions,
 		"zero-rtt": strToBool(cfg.shadowquic_zero_rtt),
 		cwnd: strToInt(cfg.shadowquic_cwnd),
 		"max-datagram-frame-size": strToInt(cfg.shadowquic_max_datagram_frame_size),
 		"recv-window-conn": strToInt(cfg.shadowquic_recv_window_conn),
 		"recv-window": strToInt(cfg.shadowquic_recv_window),
-		"disable-mtu-discovery": cfg.shadowquic_mtu_discovery === '0' ? true : false,
+		"disable-mtu-discovery": cfg.shadowquic_mtu_discovery === '0' ? true : null,
 
 		/* TrustTunnel */
 		"health-check": cfg.type === 'trusttunnel' ? (cfg.trusttunnel_health_check === '0' ? false : true) : null,
@@ -645,7 +650,7 @@ uci.foreach(uciconf, ucinode, (cfg) => {
 		...(cfg.plugin === '1' ? (
 			cfg.type in ['vmess', 'vless', 'trojan', 'anytls'] ? {
 				tls: true,
-				...arrToObj([[(cfg.type in ['vmess', 'vless']) ? 'servername' : 'sni', cfg.plugin_opts_host]]),
+				...arrToObj([[cfg.type in ['vmess', 'vless'] ? 'servername' : 'sni', cfg.plugin_opts_host]]),
 				// shadow-tls
 				"shadow-tls-opts": cfg.plugin_type === 'shadow-tls' ? {
 					version: strToInt(cfg.plugin_opts_shadowtls_version),
@@ -684,7 +689,7 @@ uci.foreach(uciconf, ucinode, (cfg) => {
 		/* TLS fields */
 		...(strToBool(cfg.tls) ? {tls: cfg.type in ['trojan', 'anytls', 'tuic', 'hysteria', 'hysteria2', 'shadowquic', 'trusttunnel', 'masque'] ? null : true} : {}),
 		"disable-sni": strToBool(cfg.tls_disable_sni),
-		...(cfg.tls_sni ? arrToObj([[(cfg.type in ['vmess', 'vless']) ? 'servername' : 'sni', cfg.tls_sni]]) : {}),
+		...(cfg.tls_sni ? arrToObj([[cfg.type in ['vmess', 'vless'] ? 'servername' : 'sni', cfg.tls_sni]]) : {}),
 		fingerprint: cfg.tls_fingerprint,
 		alpn: strToBool(cfg.tls) ? cfg.tls_alpn : null, // Array
 		"name-cert-verify": cfg.tls_name_cert_verify,
