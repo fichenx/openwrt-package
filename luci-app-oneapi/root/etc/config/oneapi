@@ -1,4 +1,0 @@
-config main
-	option 'port' '3005'
-#	option 'config_path' ''
-
