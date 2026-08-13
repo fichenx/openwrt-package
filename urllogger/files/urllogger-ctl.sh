@@ -2,32 +2,19 @@
 
 QUEUE="/dev/natflow_urllogger_queue"
 READER="/usr/sbin/urllogger-reader"
-LOCKDIR="/tmp/urllogger.lck"
-
-[ -c "$QUEUE" ] || exit 1
-[ -x "$READER" ] || exit 1
-
-urllogger_stop() {
-	echo "0" > /proc/sys/urllogger_store/enable
-	rm -rf "$LOCKDIR"
-	"$READER" --clear >/dev/null 2>&1
-}
-
-urllogger_start() {
-	echo "1" > /proc/sys/urllogger_store/enable
-}
-
-urllogger_read() {
-	"$READER"
-}
+SERVICE="/etc/init.d/urllogger"
 
 case "$1" in
-	stop) urllogger_stop ;;
-	start) urllogger_start ;;
-	read) urllogger_read ;;
+	start|stop|restart)
+		exec "$SERVICE" "$1"
+		;;
+	read)
+		[ -c "$QUEUE" ] || exit 1
+		[ -x "$READER" ] || exit 1
+		exec "$READER"
+		;;
 	*)
-		echo "usage: $0 start|stop|read"
+		echo "usage: $0 start|stop|restart|read"
 		exit 1
 		;;
 esac
-exit 0
