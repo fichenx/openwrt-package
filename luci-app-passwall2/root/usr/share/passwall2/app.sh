@@ -69,7 +69,7 @@ check_run_environment() {
 
 run_xray() {
 	local flag node redir_port socks_address socks_port socks_username socks_password http_address http_port http_username http_password
-	local dns_listen_port direct_dns_query_strategy remote_dns_protocol remote_dns_udp_server remote_dns_tcp_server remote_dns_doh remote_dns_client_ip remote_dns_detour remote_fakedns remote_dns_query_strategy dns_cache
+	local dns_listen_port direct_dns_query_strategy remote_dns_protocol remote_dns_udp_server remote_dns_udp_port remote_dns_tcp_server remote_dns_tcp_port remote_dns_doh remote_dns_client_ip remote_dns_detour remote_fakedns remote_dns_query_strategy dns_cache
 	local loglevel log_file config_file
 	eval_set_val $@
 	node_protocol=$(config_n_get $node protocol)
@@ -135,18 +135,12 @@ run_xray() {
 		}
 		case "$remote_dns_protocol" in
 			udp)
-				local _dns=$(get_first_dns remote_dns_udp_server 53 | sed 's/#/:/g')
-				local _dns_address=$(echo ${_dns} | awk -F ':' '{print $1}')
-				local _dns_port=$(echo ${_dns} | awk -F ':' '{print $2}')
-				json_add_string "remote_dns_udp_port" "${_dns_port}"
-				json_add_string "remote_dns_udp_server" "${_dns_address}"
+				json_add_string "remote_dns_udp_server" "${remote_dns_udp_server}"
+				json_add_string "remote_dns_udp_port" "${remote_dns_udp_port}"
 			;;
 			tcp)
-				local _dns=$(get_first_dns remote_dns_tcp_server 53 | sed 's/#/:/g')
-				local _dns_address=$(echo ${_dns} | awk -F ':' '{print $1}')
-				local _dns_port=$(echo ${_dns} | awk -F ':' '{print $2}')
-				json_add_string "remote_dns_tcp_port" "${_dns_port}"
-				json_add_string "remote_dns_tcp_server" "${_dns_address}"
+				json_add_string "remote_dns_tcp_server" "${remote_dns_tcp_server}"
+				json_add_string "remote_dns_tcp_port" "${remote_dns_tcp_port}"
 			;;
 			doh)
 				local _doh_url=$(echo $remote_dns_doh | awk -F ',' '{print $1}')
@@ -197,7 +191,7 @@ run_xray() {
 
 run_singbox() {
 	local flag node redir_port socks_address socks_port socks_username socks_password http_address http_port http_username http_password
-	local dns_listen_port direct_dns_query_strategy remote_dns_protocol remote_dns_udp_server remote_dns_tcp_server remote_dns_doh remote_dns_client_ip remote_dns_detour remote_fakedns remote_dns_query_strategy remote_rewrite_ttl dns_cache
+	local dns_listen_port direct_dns_query_strategy remote_dns_protocol remote_dns_udp_server remote_dns_udp_port remote_dns_tcp_server remote_dns_tcp_port remote_dns_doh remote_dns_client_ip remote_dns_detour remote_fakedns remote_dns_query_strategy remote_rewrite_ttl dns_cache
 	local loglevel log_file config_file
 	eval_set_val $@
 	local type=$(echo $(config_n_get $node type) | tr 'A-Z' 'a-z')
@@ -270,20 +264,14 @@ run_singbox() {
 		case "$remote_dns_protocol" in
 			udp|\
 			quic)
-				local _dns=$(get_first_dns remote_dns_udp_server 53 | sed 's/#/:/g')
-				local _dns_address=$(echo ${_dns} | awk -F ':' '{print $1}')
-				local _dns_port=$(echo ${_dns} | awk -F ':' '{print $2}')
-				json_add_string "remote_dns_udp_port" "${_dns_port}"
-				json_add_string "remote_dns_udp_server" "${_dns_address}"
+				json_add_string "remote_dns_udp_server" "${remote_dns_udp_server}"
+				json_add_string "remote_dns_udp_port" "${remote_dns_udp_port}"
 				[ "$remote_dns_protocol" == "quic" ] && json_add_string "remote_dns_quic" "1"
 			;;
 			tcp|\
 			tls)
-				local _dns=$(get_first_dns remote_dns_tcp_server 53 | sed 's/#/:/g')
-				local _dns_address=$(echo ${_dns} | awk -F ':' '{print $1}')
-				local _dns_port=$(echo ${_dns} | awk -F ':' '{print $2}')
-				json_add_string "remote_dns_tcp_port" "${_dns_port}"
-				json_add_string "remote_dns_tcp_server" "${_dns_address}"
+				json_add_string "remote_dns_tcp_server" "${remote_dns_tcp_server}"
+				json_add_string "remote_dns_tcp_port" "${remote_dns_tcp_port}"
 				[ "$remote_dns_protocol" == "tls" ] && json_add_string "remote_dns_tls" "1"
 			;;
 			doh|\
@@ -803,13 +791,28 @@ run_ipset_dnsmasq() {
 }
 
 acl_node() {
+	[ ! -f ${TMP_ACL_PATH}/acl_node_default ] && ENABLED_DEFAULT_ACL=0
+	local acl_node_num=$(jsonfilter -s "${acl_json}" -e '$.node_order[*]' | wc -l)
+	[ "${acl_node_num}" == 0 ] && {
+		ENABLED_DEFAULT_ACL=0
+		ENABLED_ACLS=0
+		return
+	}
+	[ "$(uci -q get dhcp.@dnsmasq[0].dns_redirect)" == "1" ] && {
+		uci -q set ${CONFIG}.@global[0].dnsmasq_dns_redirect='1'
+		uci -q commit ${CONFIG}
+		uci -q set dhcp.@dnsmasq[0].dns_redirect='0'
+		uci -q commit dhcp
+
+		json_init
+		json_add_string "LOG" "0"
+		lua $APP_PATH/helper_dnsmasq.lua restart "$(json_dump)"
+	}
 	local run_func
 	[ -n "${XRAY_BIN}" ] && run_func="run_xray"
 	[ -n "${SINGBOX_BIN}" ] && run_func="run_singbox"
-	local acl_node_num=0
 	for nid in $(jsonfilter -s "${acl_json}" -e '$.node_order[*]'); do
 		[ ! -f ${TMP_ACL_PATH}/acl_node_${nid} ] && continue
-		acl_node_num=$(expr $acl_node_num + 1)
 		local _var=$(cat ${TMP_ACL_PATH}/acl_node_${nid} 2>/dev/null)
 		eval local ${_var}
 		local type=$(echo $(config_n_get $node type) | tr 'A-Z' 'a-z')
@@ -869,8 +872,6 @@ acl_node() {
 		fi
 		rm -f ${TMP_ACL_PATH}/acl_node_${nid}
 	done
-	[ ! -f ${TMP_ACL_PATH}/acl_node_default ] && ENABLED_DEFAULT_ACL=0
-	[ "${acl_node_num}" == 0 ] && ENABLED_ACLS=0 && ENABLED_DEFAULT_ACL=0
 }
 
 start() {
@@ -892,16 +893,6 @@ start() {
 	nftflag=0
 	USE_TABLES=""
 	check_run_environment
-	[ "$(uci -q get dhcp.@dnsmasq[0].dns_redirect)" == "1" ] && {
-		uci -q set ${CONFIG}.@global[0].dnsmasq_dns_redirect='1'
-		uci -q commit ${CONFIG}
-		uci -q set dhcp.@dnsmasq[0].dns_redirect='0'
-		uci -q commit dhcp
-
-		json_init
-		json_add_string "LOG" "0"
-		lua $APP_PATH/helper_dnsmasq.lua restart "$(json_dump)"
-	}
 	[ -n "$USE_TABLES" ] && source $APP_PATH/${USE_TABLES}.sh start
 	set_cache_var "USE_TABLES" "$USE_TABLES"
 	if [ "$ENABLED_DEFAULT_ACL" == 1 ] || [ "$ENABLED_ACLS" == 1 ]; then
