@@ -104,8 +104,9 @@ rm -rf luci-app-socat
 git_sparse_clone main https://github.com/chenmozhijin/luci-app-socat luci-app-socat
 
 #####luci-app-mosdns mosdns v2dat#####
-rm -rf luci-app-mosdns mosdns v2dat
-git_sparse_clone v5 https://github.com/sbwml/luci-app-mosdns luci-app-mosdns mosdns v2dat 
+rm -rf luci-app-mosdns mosdns v2dat geo2txt
+git_sparse_clone v5-lua https://github.com/sbwml/luci-app-mosdns luci-app-mosdns mosdns geo2txt
+git_sparse_clone main https://github.com/kenzok8/wall v2dat
 
 #####luci-app-ikoolproxy#####
 rm -rf luci-app-ikoolproxy luci-app-godproxy
