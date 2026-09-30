@@ -271,6 +271,8 @@ if (UA2F_BUILD_TESTS)
             test/cli_test.cc
             test/http_session_test.cc
             test/http_parser_ua_test.cc
+            test/http_parser_ua_alloc_test.cc
+            test/alloc_tracker.c
             src/util.c
             src/cache.c
             src/http_session.c
@@ -287,6 +289,9 @@ if (UA2F_BUILD_TESTS)
             pthread
     )
     ua2f_link_atomic_if_needed(ua2f_test)
+    # Count and inject allocation failures only inside explicitly scoped tests.
+    target_link_options(ua2f_test PRIVATE
+            -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc -Wl,--wrap=free)
     target_include_directories(ua2f_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
     target_include_directories(ua2f_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/third/llhttp)
     if (UA2F_ENABLE_UCI)
@@ -372,12 +377,14 @@ if (UA2F_BUILD_TESTS)
         target_link_libraries(ua2f_handler_test uci)
     endif ()
 
-    # Proxy lifecycle tests exercise listener setup, worker selection, and
-    # startup failure paths without requiring transparent-routing privileges.
+    # Proxy tests cover lifecycle and real socket/epoll forwarding without
+    # transparent-routing privileges. The C bridge includes proxy.c to exercise
+    # private connection state without exposing test hooks in production headers.
     add_executable(
             ua2f_proxy_test
             test/proxy_test.cc
-            src/proxy.c
+            test/proxy_transport_test.cc
+            test/proxy_transport.c
             src/handler.c
             src/util.c
             src/cache.c

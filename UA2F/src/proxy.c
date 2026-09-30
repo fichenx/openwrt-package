@@ -136,6 +136,7 @@ struct proxy_connection {
     uint32_t target_armed;
 };
 
+// Not registered in epoll, including a paused side with no useful events.
 #define PROXY_EVENTS_UNSET UINT32_MAX
 
 struct proxy_context {
@@ -373,7 +374,10 @@ static void proxy_buffer_compact(struct proxy_buffer *buf) {
 static int epoll_set(int epoll_fd, int op, int fd, struct epoll_ref *ref, uint32_t events) {
     struct epoll_event event;
     memset(&event, 0, sizeof(event));
-    event.events = events | EPOLLERR | EPOLLHUP | EPOLLRDHUP;
+    event.events = events | EPOLLERR | EPOLLHUP;
+    if (events & EPOLLIN) {
+        event.events |= EPOLLRDHUP;
+    }
     event.data.ptr = ref;
     return epoll_ctl(epoll_fd, op, fd, &event);
 }
@@ -381,10 +385,21 @@ static int epoll_set(int epoll_fd, int op, int fd, struct epoll_ref *ref, uint32
 // Re-arm an fd only when the desired interest mask differs from what is armed,
 // avoiding an EPOLL_CTL_MOD syscall on every event in steady state.
 static int epoll_rearm(int epoll_fd, int fd, struct epoll_ref *ref, uint32_t *armed, uint32_t desired) {
+    if (desired == 0) {
+        // HUP is reported even with an empty interest mask. Remove a blocked
+        // or fully drained side until the other side makes progress, rather
+        // than spinning on HUP while there is nowhere to forward its data.
+        if (*armed != PROXY_EVENTS_UNSET && epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL) != 0) {
+            return -1;
+        }
+        *armed = PROXY_EVENTS_UNSET;
+        return 0;
+    }
     if (*armed == desired) {
         return 0;
     }
-    if (epoll_set(epoll_fd, EPOLL_CTL_MOD, fd, ref, desired) != 0) {
+    const int op = *armed == PROXY_EVENTS_UNSET ? EPOLL_CTL_ADD : EPOLL_CTL_MOD;
+    if (epoll_set(epoll_fd, op, fd, ref, desired) != 0) {
         return -1;
     }
     *armed = desired;
@@ -416,6 +431,7 @@ static void free_closed_connections(struct proxy_context *ctx) {
         struct proxy_connection *conn = ctx->closing;
         ctx->closing = conn->close_next;
         connection_unlink(ctx, conn);
+        session_state_destroy(&conn->session);
         free(conn);
     }
 }
@@ -516,10 +532,11 @@ static void rewrite_user_agent_entries(uint8_t *buf, size_t len, const struct ht
     }
     const size_t replacement_len = UA2F_MAX_USER_AGENT_LENGTH;
 
-    for (int i = 0; i < session->ua_entry_count; i++) {
-        const size_t offset = session->ua_entries[i].offset;
-        const size_t ua_len = session->ua_entries[i].len;
-        const size_t replacement_offset = session->ua_entries[i].replacement_offset;
+    for (size_t i = 0; i < session->ua_entry_count; i++) {
+        const struct ua_mangle_entry *entry = session_ua_entry_const(session, i);
+        const size_t offset = entry->offset;
+        const size_t ua_len = entry->len;
+        const size_t replacement_offset = entry->replacement_offset;
         if (offset > len || ua_len > len - offset) {
             continue;
         }
@@ -535,14 +552,18 @@ static void rewrite_user_agent_entries(uint8_t *buf, size_t len, const struct ht
     }
 }
 
-static void process_client_payload(struct proxy_connection *conn, uint8_t *buf, size_t len) {
+static int process_client_payload(struct proxy_connection *conn, uint8_t *buf, size_t len) {
     if (conn->rewrite_disabled) {
-        return;
+        return 0;
     }
 
     count_tcp_packet();
     session_reset_per_packet(&conn->session, buf);
     const int parse_ret = http_parser_feed(&conn->session, (const char *)buf, len);
+    if (parse_ret == HTTP_PARSER_NO_MEMORY) {
+        syslog(LOG_ERR, "Failed to allocate User-Agent entries, closing connection");
+        return -1;
+    }
     if (conn->session.ua_entry_count > 0) {
         rewrite_user_agent_entries(buf, len, &conn->session);
         count_user_agent_packet();
@@ -553,6 +574,7 @@ static void process_client_payload(struct proxy_connection *conn, uint8_t *buf, 
     if (parse_ret != 0) {
         conn->rewrite_disabled = true;
     }
+    return 0;
 }
 
 static int flush_buffer(int fd, struct proxy_buffer *buf) {
@@ -607,8 +629,9 @@ static int read_into_buffer(struct proxy_connection *conn, enum proxy_side side)
             return -1;
         }
 
-        if (side == PROXY_SIDE_CLIENT) {
-            process_client_payload(conn, out->data + out->len, (size_t)n);
+        if (side == PROXY_SIDE_CLIENT &&
+            process_client_payload(conn, out->data + out->len, (size_t)n) != 0) {
+            return -1;
         }
         out->len += (size_t)n;
     }
@@ -794,7 +817,7 @@ static void handle_connection_event(struct epoll_ref *ref, uint32_t events) {
         return;
     }
 
-    if (events & EPOLLOUT) {
+    if (events & (EPOLLOUT | EPOLLHUP)) {
         if (side == PROXY_SIDE_CLIENT) {
             if (flush_buffer(conn->client_fd, &conn->target_to_client) != 0 || pump_splice_to_client(conn) != 0) {
                 connection_schedule_close(conn);
@@ -806,7 +829,10 @@ static void handle_connection_event(struct epoll_ref *ref, uint32_t events) {
         }
     }
 
-    if (events & (EPOLLIN | EPOLLRDHUP)) {
+    // HUP/RDHUP may arrive with unread bytes. Only recv/splice returning zero
+    // establishes EOF; a full buffer or pending pipe must resume after flushing.
+    const bool read_eof = side == PROXY_SIDE_CLIENT ? conn->client_eof : conn->target_eof;
+    if (!read_eof && (events & (EPOLLIN | EPOLLRDHUP | EPOLLHUP))) {
         const int read_result =
             side == PROXY_SIDE_TARGET ? transfer_target_to_client(conn) : read_into_buffer(conn, side);
         if (read_result != 0) {
@@ -827,11 +853,13 @@ static void handle_connection_event(struct epoll_ref *ref, uint32_t events) {
         }
     }
 
-    if ((events & (EPOLLERR | EPOLLHUP)) != 0) {
-        if (side == PROXY_SIDE_CLIENT) {
-            conn->client_eof = true;
-        } else {
-            conn->target_eof = true;
+    if (events & EPOLLERR) {
+        const int fd = side == PROXY_SIDE_CLIENT ? conn->client_fd : conn->target_fd;
+        int error = 0;
+        socklen_t error_len = sizeof(error);
+        if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &error_len) != 0 || error != 0) {
+            connection_schedule_close(conn);
+            return;
         }
     }
 
