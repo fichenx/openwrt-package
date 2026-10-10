@@ -42,6 +42,53 @@ function formatUptime(sec) {
 	return '%dm %ds'.format(m, s);
 }
 
+function formatLastActive(sec) {
+	sec = parseInt(sec, 10);
+	if (isNaN(sec) || sec < 0)
+		return '-';
+
+	var tr = (typeof _ === 'function') ? _ : function(s) { return s; };
+
+	if (sec <= 5)
+		return tr('Just now');
+
+	if (sec < 60) {
+		var str = tr('%d seconds ago');
+		return str.format ? str.format(sec) : str.replace('%d', sec);
+	}
+
+	var m = Math.floor(sec / 60);
+	var s = sec % 60;
+	if (m < 60) {
+		if (s > 0) {
+			var str = tr('%dm %ds ago');
+			return str.format ? str.format(m, s) : str.replace('%d', m).replace('%d', s);
+		}
+		var str = tr('%d minutes ago');
+		return str.format ? str.format(m) : str.replace('%d', m);
+	}
+
+	var h = Math.floor(sec / 3600);
+	m = Math.floor((sec % 3600) / 60);
+	if (h < 24) {
+		if (m > 0) {
+			var str = tr('%dh %dm ago');
+			return str.format ? str.format(h, m) : str.replace('%d', h).replace('%d', m);
+		}
+		var str = tr('%d hours ago');
+		return str.format ? str.format(h) : str.replace('%d', h);
+	}
+
+	var d = Math.floor(sec / 86400);
+	h = Math.floor((sec % 86400) / 3600);
+	if (h > 0) {
+		var str = tr('%dd %dh ago');
+		return str.format ? str.format(d, h) : str.replace('%d', d).replace('%d', h);
+	}
+	var str = tr('%d days ago');
+	return str.format ? str.format(d) : str.replace('%d', d);
+}
+
 function getIconSvg(type) {
 	switch (type) {
 		case 'phone':
@@ -78,6 +125,7 @@ return view.extend({
 	searchQuery: '',
 	viewMode: 'minimap',
 	selectedNodeId: 'ac',
+	formatLastActive: formatLastActive,
 
 	load: function() {
 		return callGetTopology();
@@ -291,7 +339,7 @@ return view.extend({
 			mainRows.push(E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Wi-Fi Signal')), E('td', {}, (client.signal || 0) + ' dBm') ]));
 		}
 		if (client.idle_time !== undefined && client.idle_time !== null) {
-			mainRows.push(E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Idle Time')), E('td', {}, client.idle_time + ' s') ]));
+			mainRows.push(E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Last Active')), E('td', {}, formatLastActive(client.idle_time)) ]));
 		}
 
 		var body = E('div', { 'class': 'fm-modal-body' }, [
@@ -365,6 +413,8 @@ return view.extend({
 				' ',
 				E('span', { 'style': 'color:#007bff;' }, '↑ ' + formatSpeed(client.tx_speed))
 			]));
+		} else if (client.idle_time !== undefined && client.idle_time !== null) {
+			subMeta.push(E('span', { 'class': 'fm-client-idle text-muted', 'title': _('Last Active') }, formatLastActive(client.idle_time)));
 		}
 
 		var card = E('div', {
@@ -795,29 +845,34 @@ return view.extend({
 	},
 
 	buildNodeTree: function(nodes) {
-		var nodeMap = {};
+		var nodeMap = Object.create(null);
 		var root = null;
 		nodes.forEach(function(n) {
 			nodeMap[n.id] = n;
 			n.children = [];
-		});
-		nodes.forEach(function(n) {
-			if (n.parent_id && nodeMap[n.parent_id]) {
-				nodeMap[n.parent_id].children.push(n);
-			} else if (n.role === 'controller' || (!n.role && n.id === 'ac')) {
-				root = n;
-			}
+			if (n.role === 'controller' || (!n.role && n.id === 'ac')) root = n;
 		});
 		if (!root && nodes.length > 0) root = nodes[0];
-		if (root) {
-			nodes.forEach(function(n) {
-				if (n !== root && (!n.parent_id || !nodeMap[n.parent_id])) {
-					if (root.children.indexOf(n) === -1) {
-						root.children.push(n);
-					}
+		var parents = Object.create(null);
+		nodes.forEach(function(n) {
+			if (n !== root) parents[n.id] = nodeMap[n.parent_id] || root;
+		});
+		nodes.forEach(function(n) {
+			if (n === root) return;
+			var visited = Object.create(null);
+			var current = n;
+			while (current && current !== root) {
+				if (visited[current.id]) {
+					parents[n.id] = root;
+					break;
 				}
-			});
-		}
+				visited[current.id] = true;
+				current = parents[current.id];
+			}
+		});
+		nodes.forEach(function(n) {
+			if (parents[n.id]) parents[n.id].children.push(n);
+		});
 		return root;
 	},
 
@@ -1263,6 +1318,10 @@ return view.extend({
 			}
 			.fm-client-speed {
 				font-size: 11px;
+			}
+			.fm-client-idle {
+				font-size: 10px;
+				color: #64748b;
 			}
 			.badge-5g { background: #e0f2fe; color: #0369a1; font-weight: 600; font-size: 11px; }
 			.badge-2g { background: #fef3c7; color: #b45309; font-weight: 600; font-size: 11px; }
