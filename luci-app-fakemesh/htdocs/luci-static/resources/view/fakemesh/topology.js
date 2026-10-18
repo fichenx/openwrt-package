@@ -11,6 +11,7 @@ var callGetTopology = rpc.declare({
 	expect: { }
 });
 
+// LuCI parses scalar string content as HTML; put topology text in child arrays.
 function formatSpeed(bytesPerSec) {
 	var b = parseFloat(bytesPerSec) || 0;
 	if (b >= 1048576)
@@ -89,6 +90,7 @@ function formatLastActive(sec) {
 	return str.format ? str.format(d) : str.replace('%d', d);
 }
 
+// Fixed templates are the only topology content intentionally parsed as HTML.
 function getIconSvg(type) {
 	switch (type) {
 		case 'phone':
@@ -119,6 +121,48 @@ function getIconSvg(type) {
 	}
 }
 
+// Keep keyed cards and unchanged subtrees mounted during polling.
+function syncChildren(target, source) {
+	var keyed = new Map();
+	Array.from(target.children).forEach(function(child) {
+		var key = child.getAttribute('data-fm-key');
+		if (key) keyed.set(key, child);
+	});
+	var cursor = target.firstChild;
+	Array.from(source.childNodes).forEach(function(next) {
+		var key = next.nodeType === 1 && next.getAttribute('data-fm-key');
+		var current = key ? keyed.get(key) : cursor;
+		if (!key && current && current.nodeType === 1 && current.hasAttribute('data-fm-key')) current = null;
+		if (!current) {
+			target.insertBefore(next, cursor);
+			return;
+		}
+		if (current !== cursor) target.insertBefore(current, cursor);
+		if (current.nodeType !== next.nodeType || current.nodeName !== next.nodeName) {
+			target.replaceChild(next, current);
+			current = next;
+		} else if (!current.isEqualNode(next)) {
+			if (current.nodeType === 1) {
+				Array.from(current.attributes).forEach(function(attr) {
+					if (!next.hasAttribute(attr.name)) current.removeAttribute(attr.name);
+				});
+				Array.from(next.attributes).forEach(function(attr) {
+					if (current.getAttribute(attr.name) !== attr.value) current.setAttribute(attr.name, attr.value);
+				});
+				syncChildren(current, next);
+			} else {
+				current.nodeValue = next.nodeValue;
+			}
+		}
+		cursor = current.nextSibling;
+	});
+	while (cursor) {
+		var following = cursor.nextSibling;
+		target.removeChild(cursor);
+		cursor = following;
+	}
+}
+
 return view.extend({
 	data: null,
 	filterBand: 'all',
@@ -128,7 +172,7 @@ return view.extend({
 	formatLastActive: formatLastActive,
 
 	load: function() {
-		return callGetTopology();
+		return callGetTopology().catch(function() { return null; });
 	},
 
 	renderSummaryBar: function(summary, meshId) {
@@ -139,13 +183,13 @@ return view.extend({
 			linkBadges.push(E('span', { 'class': 'badge badge-secondary' }, _('Single Gateway')));
 		} else {
 			if (summary.wireless_nodes && summary.wireless_nodes > 0) {
-				linkBadges.push(E('span', { 'class': 'badge badge-5g' }, summary.wireless_nodes + ' ' + _('Wireless Mesh')));
+				linkBadges.push(E('span', { 'class': 'badge badge-5g' }, [summary.wireless_nodes + ' ' + _('Wireless Mesh')]));
 			}
 			if (summary.wired_nodes && summary.wired_nodes > 0) {
-				linkBadges.push(E('span', { 'class': 'badge badge-wired' }, summary.wired_nodes + ' ' + _('Wired AP')));
+				linkBadges.push(E('span', { 'class': 'badge badge-wired' }, [summary.wired_nodes + ' ' + _('Wired AP')]));
 			}
 			if (summary.max_hops && summary.max_hops > 1) {
-				linkBadges.push(E('span', { 'class': 'badge badge-hop' }, summary.max_hops + ' ' + _('Cascade Hops')));
+				linkBadges.push(E('span', { 'class': 'badge badge-hop' }, [summary.max_hops + ' ' + _('Cascade Hops')]));
 			}
 			if (linkBadges.length === 0) {
 				linkBadges.push(E('span', { 'class': 'badge badge-primary' }, _('Mesh Connected')));
@@ -155,7 +199,7 @@ return view.extend({
 		return E('div', { 'class': 'fm-summary-bar' }, [
 			E('div', { 'class': 'fm-stat-box' }, [
 				E('div', { 'class': 'fm-stat-title' }, _('FakeMesh ID')),
-				E('div', { 'class': 'fm-stat-val text-primary' }, meshId || _('Not Configured'))
+				E('div', { 'class': 'fm-stat-val text-primary' }, [meshId || _('Not Configured')])
 			]),
 			E('div', { 'class': 'fm-stat-box' }, [
 				E('div', { 'class': 'fm-stat-title' }, _('Backhaul Links')),
@@ -164,32 +208,34 @@ return view.extend({
 			E('div', { 'class': 'fm-stat-box' }, [
 				E('div', { 'class': 'fm-stat-title' }, _('Mesh Nodes')),
 				E('div', { 'class': 'fm-stat-val' }, [
-					E('span', { 'class': 'text-success' }, String(summary.node_count || 1)),
-					E('small', { 'class': 'fm-stat-sub' }, ' (' + (summary.online_agents || 0) + ' ' + _('Agents') + ')')
+					E('span', { 'class': 'text-success' }, [String(summary.node_count || 1)]),
+					E('small', { 'class': 'fm-stat-sub' }, [' (' + (summary.online_agents || 0) + ' ' + _('Agents') + ')'])
 				])
 			]),
 			E('div', { 'class': 'fm-stat-box' }, [
 				E('div', { 'class': 'fm-stat-title' }, _('Total Clients')),
-				E('div', { 'class': 'fm-stat-val text-info' }, String(summary.client_count || 0))
+				E('div', { 'class': 'fm-stat-val text-info' }, [String(summary.client_count || 0)])
 			]),
 			E('div', { 'class': 'fm-stat-box' }, [
-				E('div', { 'class': 'fm-stat-title' }, _('5G / 2.4G / Wired / VPN')),
+				E('div', { 'class': 'fm-stat-title' }, _('6G / 5G / 2.4G / Wired / VPN')),
 				E('div', { 'class': 'fm-stat-val' }, [
-					E('span', { 'class': 'badge badge-5g' }, (summary.wifi_5g || 0) + ' 5G'),
+					E('span', { 'class': 'badge badge-6g' }, [(summary.wifi_6g || 0) + ' 6G']),
 					' ',
-					E('span', { 'class': 'badge badge-2g' }, (summary.wifi_2g || 0) + ' 2.4G'),
+					E('span', { 'class': 'badge badge-5g' }, [(summary.wifi_5g || 0) + ' 5G']),
 					' ',
-					E('span', { 'class': 'badge badge-wired' }, (summary.wired || 0) + ' ' + _('Wired')),
+					E('span', { 'class': 'badge badge-2g' }, [(summary.wifi_2g || 0) + ' 2.4G']),
+					' ',
+					E('span', { 'class': 'badge badge-wired' }, [(summary.wired || 0) + ' ' + _('Wired')]),
 					(summary.vpn ? ' ' : ''),
-					(summary.vpn ? E('span', { 'class': 'badge badge-vpn' }, summary.vpn + ' VPN') : E([]))
+					(summary.vpn ? E('span', { 'class': 'badge badge-vpn' }, [summary.vpn + ' VPN']) : E([]))
 				])
 			]),
 			E('div', { 'class': 'fm-stat-box' }, [
 				E('div', { 'class': 'fm-stat-title' }, _('Realtime Traffic')),
 				E('div', { 'class': 'fm-stat-val' }, [
-					E('span', { 'style': 'color:#28a745' }, '↓ ' + formatSpeed(summary.total_rx_speed || 0)),
+					E('span', { 'style': 'color:#28a745' }, ['↓ ' + formatSpeed(summary.total_rx_speed || 0)]),
 					'  ',
-					E('span', { 'style': 'color:#007bff' }, '↑ ' + formatSpeed(summary.total_tx_speed || 0))
+					E('span', { 'style': 'color:#007bff' }, ['↑ ' + formatSpeed(summary.total_tx_speed || 0)])
 				])
 			])
 		]);
@@ -212,7 +258,7 @@ return view.extend({
 					ev.target.classList.add('btn-primary');
 					self.updateCanvas();
 				}
-			}, item.label);
+			}, [item.label]);
 		});
 
 		var searchInput = E('input', {
@@ -222,12 +268,14 @@ return view.extend({
 			'value': self.searchQuery,
 			'input': function(ev) {
 				self.searchQuery = ev.target.value.toLowerCase().trim();
-				self.updateCanvas();
+				window.clearTimeout(self.searchTimer);
+				self.searchTimer = window.setTimeout(function() { self.updateCanvas(); }, 150);
 			}
 		});
 
 		var bandButtons = [
 			{ id: 'all', label: _('All Clients') },
+			{ id: '6g', label: '6G' },
 			{ id: '5g', label: '5G' },
 			{ id: '2g', label: '2.4G' },
 			{ id: 'wired', label: _('Wired') },
@@ -243,7 +291,7 @@ return view.extend({
 					ev.target.classList.add('btn-primary');
 					self.updateCanvas();
 				}
-			}, item.label);
+			}, [item.label]);
 		});
 
 		return E('div', { 'class': 'fm-toolbar' }, [
@@ -255,55 +303,103 @@ return view.extend({
 		]);
 	},
 
-	showDetailModal: function(title, content) {
-		ui.showModal(title, [
-			content,
-			E('div', { 'class': 'right' }, [
-				E('button', {
-					'class': 'btn btn-primary',
-					'click': ui.hideModal
-				}, _('Close'))
-			])
-		]);
+	closeDetailModalOnBackdrop: function(ev) {
+		if (ev.target === ev.currentTarget && ev.currentTarget.firstElementChild.classList.contains('fm-detail-modal'))
+			ui.hideModal();
+	},
+
+	refreshStatusText: function() {
+		var message = this.lastSuccessfulRefresh ? _('Last successful refresh') + ': ' + new Date(this.lastSuccessfulRefresh).toLocaleTimeString() : _('Waiting for topology data');
+		if (this.refreshFailed) message = (this.lastSuccessfulRefresh ? _('Refresh failed; showing the last successful snapshot.') : _('Topology refresh failed.')) + ' ' + message;
+		return message;
+	},
+
+	renderRefreshStatus: function() {
+		return E('div', { 'data-fm-refresh-status': '', 'class': this.refreshFailed ? 'text-warning' : 'text-muted', 'aria-live': 'polite' }, [this.refreshStatusText()]);
+	},
+
+	updateRefreshStatus: function() {
+		var self = this;
+		document.querySelectorAll('[data-fm-refresh-status]').forEach(function(element) {
+			element.replaceWith(self.renderRefreshStatus());
+		});
+	},
+
+	showDetailModal: function(title, content, detail) {
+		var self = this;
+		var children = [content, this.renderRefreshStatus(), E('div', { 'class': 'right' }, [
+			E('button', { 'class': 'btn btn-primary', 'click': function() {
+				self.detailModal = null;
+				ui.hideModal();
+			} }, _('Close'))
+		])];
+		var previous = this.detailModal;
+		var modal;
+		if (previous && previous.type === detail.type && previous.id === detail.id &&
+			previous.element.classList.contains('fm-detail-modal') && document.body.classList.contains('modal-overlay-active')) {
+			modal = previous.element;
+			syncChildren(modal, E('div', {}, [E('h4', {}, [title])].concat(children)));
+		} else {
+			modal = ui.showModal([title], children, 'fm-detail-modal');
+			modal.parentNode.addEventListener('click', this.closeDetailModalOnBackdrop);
+		}
+		this.detailModal = { type: detail.type, id: detail.id, title: title, element: modal };
+	},
+
+	refreshDetailModal: function() {
+		var detail = this.detailModal;
+		if (!detail) return;
+		if (!document.body.classList.contains('modal-overlay-active') || !detail.element.classList.contains('fm-detail-modal')) {
+			this.detailModal = null;
+			return;
+		}
+		var item = detail.type === 'node' ? this.findNode(detail.id) : this.findClient(detail.id);
+		if (!item) {
+			this.showDetailModal(detail.title, E('div', { 'class': 'alert-message warning' }, _('This device is no longer present in the latest topology.')), detail);
+		} else if (detail.type === 'node') {
+			this.showNodeModal(item);
+		} else {
+			this.showClientModal(item, this.findNode(item.node_id));
+		}
 	},
 
 	showNodeModal: function(node) {
 		var isController = (node.role === 'controller') || (!node.role && node.id === 'ac');
 		var isLocal = (this.data && this.data.current_node_id) ? (node.id === this.data.current_node_id) : false;
-		var uplinkText = _('Root Gateway');
+		var uplinkText = isController ? _('Root Gateway') : _('Unknown link');
 		if (node.uplink && node.uplink.type === 'wireless') {
 			uplinkText = (node.uplink.band || '5G') + ' Mesh (' + (node.uplink.signal || 0) + ' dBm, ' + (node.uplink.rx_bitrate || 0) + ' Mbps)';
 		} else if (node.uplink && node.uplink.type === 'wired') {
 			uplinkText = _('Wired Ethernet') + ' (' + (node.uplink.port || 'LAN') + (node.uplink.speed ? (', ' + node.uplink.speed) : '') + ')';
 		}
 
-		var upstreamNodeName = isController ? (node.parent_name || _('Internet Gateway')) : (node.parent_name || node.parent_hostname || 'X-WRT');
+		var upstreamNodeName = this.formatUpstream(node);
 
 		var body = E('div', { 'class': 'fm-modal-body' }, [
 			E('table', { 'class': 'table' }, [
-				isLocal ? E('tr', {}, [ E('td', { 'class': 'font-weight-bold text-success' }, _('Local Device')), E('td', {}, E('span', { 'class': 'badge badge-local' }, '📍 ' + _('Current Device (This Node)'))) ]) : E([]),
-				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Hostname')), E('td', {}, node.hostname || '-') ]),
-				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Role')), E('td', {}, isController ? _('Controller (AC)') : (node.uplink && node.uplink.type === 'wired' ? _('Wired AP') : _('Agent Node'))) ]),
-				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Upstream Node')), E('td', {}, upstreamNodeName) ]),
-				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Cascade Hop')), E('td', {}, node.hop_count !== undefined ? (node.hop_count === 0 ? _('Root Node') : _('Hop %d').format(node.hop_count)) : '-') ]),
-				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('IP Address')), E('td', {}, node.ip || '-') ]),
-				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('MAC Address')), E('td', {}, node.mac || '-') ]),
-				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Hardware Model')), E('td', {}, node.model || '-') ]),
-				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Uptime')), E('td', {}, formatUptime(node.uptime)) ]),
-				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Backhaul Link')), E('td', {}, uplinkText) ]),
-				node.mesh_bssid ? E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Mesh BSSID')), E('td', {}, node.mesh_bssid) ]) : E([])
+				isLocal ? E('tr', {}, [ E('td', { 'class': 'font-weight-bold text-success' }, _('Local Device')), E('td', {}, E('span', { 'class': 'badge badge-local' }, ['📍 ' + _('Current Device (This Node)')])) ]) : E([]),
+				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Hostname')), E('td', {}, [node.hostname || '-']) ]),
+				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Role')), E('td', {}, [isController ? _('Controller (AC)') : (node.uplink && node.uplink.type === 'wired' ? _('Wired AP') : _('Agent Node'))]) ]),
+				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Upstream Node')), E('td', {}, [upstreamNodeName]) ]),
+				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Cascade Hop')), E('td', {}, [node.hop_count !== undefined ? (node.hop_count === 0 ? _('Root Node') : _('Hop %d').format(node.hop_count)) : '-']) ]),
+				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('IP Address')), E('td', {}, [node.ip || '-']) ]),
+				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('MAC Address')), E('td', {}, [node.mac || '-']) ]),
+				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Hardware Model')), E('td', {}, [node.model || '-']) ]),
+				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Uptime')), E('td', {}, [formatUptime(node.uptime)]) ]),
+				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Backhaul Link')), E('td', {}, [uplinkText]) ]),
+				node.mesh_bssid ? E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Mesh BSSID')), E('td', {}, [node.mesh_bssid]) ]) : E([])
 			]),
 			(!isLocal && node.ip) ? E('div', { 'style': 'margin-top:15px; text-align:right;' }, [
 				E('a', {
 					'class': 'btn btn-success',
 					'href': 'http://' + node.ip + '/',
 					'target': '_blank'
-				}, _('Open Web Admin') + ' ↗')
+				}, [_('Open Web Admin') + ' ↗'])
 			]) : (isLocal ? E('div', { 'style': 'margin-top:15px; text-align:right;' }, [
-				E('span', { 'class': 'badge badge-local', 'style': 'font-size:12px; padding:6px 12px;' }, '📍 ' + _('Current Device (This Node)'))
+				E('span', { 'class': 'badge badge-local', 'style': 'font-size:12px; padding:6px 12px;' }, ['📍 ' + _('Current Device (This Node)')])
 			]) : E([]))
 		]);
-		this.showDetailModal(_('Node Details') + ': ' + (node.hostname || node.ip), body);
+		this.showDetailModal(_('Node Details') + ': ' + (node.hostname || node.ip), body, { type: 'node', id: node.id });
 	},
 
 	showClientModal: function(client, node) {
@@ -313,76 +409,83 @@ return view.extend({
 				ipContent.push(E('span', {
 					'class': 'fm-ip-badge',
 					'style': 'margin-right: 4px; font-size: 12px;'
-				}, ip + (idx === 0 && client.ips.length > 1 ? ' (' + _('Primary') + ')' : '')));
+				}, [ip + (idx === 0 && client.ips.length > 1 ? ' (' + _('Primary') + ')' : '')]));
 			});
 		} else {
-			ipContent = [ E('span', { 'class': 'fm-ip-badge' }, client.ip || '-') ];
+			ipContent = [ E('span', { 'class': 'fm-ip-badge' }, [client.ip || '-']) ];
 		}
 
 		var mainRows = [
-			E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Device Name')), E('td', {}, client.hostname || _('Unknown')) ]),
+			E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Device Name')), E('td', {}, [client.hostname || _('Unknown')]) ]),
 			E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('IPv4 Addresses')), E('td', {}, ipContent) ])
 		];
 
 		if (client.ip6 && client.ip6.length > 0) {
 			var ip6Rows = client.ip6.map(function(ip6) {
-				return E('div', { 'class': 'fm-ip6-badge', 'style': 'margin-bottom:3px; display:inline-block; font-size:11px;' }, ip6);
+				return E('div', { 'class': 'fm-ip6-badge', 'style': 'margin-bottom:3px; display:inline-block; font-size:11px;' }, [ip6]);
 			});
 			mainRows.push(E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('IPv6 Addresses')), E('td', {}, ip6Rows) ]));
 		}
 
-		mainRows.push(E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('MAC Address')), E('td', {}, E('span', { 'class': 'fm-ip-badge' }, client.mac || '-')) ]));
-		mainRows.push(E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Connected Node')), E('td', {}, (node ? (node.hostname || node.ip) : '-') + ' (' + (node ? node.ip : '-') + ')') ]));
-		mainRows.push(E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Access Mode')), E('td', {}, client.access_type === 'wireless' ? ((client.band || 'Wi-Fi') + ' (' + (client.ssid || '') + ')') : (client.access_type === 'vpn' ? ('VPN (' + (client.ifname || 'remote') + ')') : (_('Wired') + ' ' + (client.port || client.ifname || '')))) ]));
+		mainRows.push(E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('MAC Address')), E('td', {}, E('span', { 'class': 'fm-ip-badge' }, [client.mac || '-'])) ]));
+		mainRows.push(E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Connected Node')), E('td', {}, [(node ? (node.hostname || node.ip) : '-') + ' (' + (node ? node.ip : '-') + ')']) ]));
+		mainRows.push(E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Access Mode')), E('td', {}, [client.access_type === 'wireless' ? ((client.band || 'Wi-Fi') + ' (' + (client.ssid || '') + ')') : (client.access_type === 'vpn' ? ('VPN (' + (client.ifname || 'remote') + ')') : (_('Wired') + ' ' + (client.port || client.ifname || '')))]) ]));
 
 		if (client.access_type === 'wireless') {
-			mainRows.push(E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Wi-Fi Signal')), E('td', {}, (client.signal || 0) + ' dBm') ]));
+			mainRows.push(E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Wi-Fi Signal')), E('td', {}, [(client.signal || 0) + ' dBm']) ]));
 		}
 		if (client.idle_time !== undefined && client.idle_time !== null) {
-			mainRows.push(E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Last Active')), E('td', {}, formatLastActive(client.idle_time)) ]));
+			mainRows.push(E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Last Active')), E('td', {}, [formatLastActive(client.idle_time)]) ]));
 		}
 
 		var body = E('div', { 'class': 'fm-modal-body' }, [
 			E('table', { 'class': 'table' }, mainRows),
 			E('table', { 'class': 'table', 'style': 'margin-top:10px;' }, [
-				client.rate_rx ? E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('PHY Rate')), E('td', {}, 'RX: ' + client.rate_rx + ' Mbps / TX: ' + client.rate_tx + ' Mbps') ]) : E([]),
-				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Realtime Speed')), E('td', {}, '↓ ' + formatSpeed(client.rx_speed || 0) + '  ↑ ' + formatSpeed(client.tx_speed || 0)) ]),
-				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Total Traffic')), E('td', {}, '↓ ' + formatBytes(client.rx_bytes || 0) + '  ↑ ' + formatBytes(client.tx_bytes || 0)) ])
+				client.rate_rx ? E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('PHY Rate')), E('td', {}, ['RX: ' + client.rate_rx + ' Mbps / TX: ' + client.rate_tx + ' Mbps']) ]) : E([]),
+				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Realtime Speed')), E('td', {}, ['↓ ' + formatSpeed(client.rx_speed || 0) + '  ↑ ' + formatSpeed(client.tx_speed || 0)]) ]),
+				E('tr', {}, [ E('td', { 'class': 'font-weight-bold' }, _('Total Traffic')), E('td', {}, ['↓ ' + formatBytes(client.rx_bytes || 0) + '  ↑ ' + formatBytes(client.tx_bytes || 0)]) ])
 			])
 		]);
-		this.showDetailModal(_('Client Details') + ': ' + (client.hostname || client.mac), body);
+		this.showDetailModal(_('Client Details') + ': ' + (client.hostname || client.mac), body, { type: 'client', id: client.mac });
+	},
+
+	findNode: function(id) {
+		return ((this.data || {}).nodes || []).find(function(node) { return node.id === id; });
+	},
+
+	formatUpstream: function(node) {
+		if (node.role === 'controller' || (!node.role && node.id === 'ac')) {
+			var upstream = node.upstream || node.backhaul || node.uplink || {};
+			var wan = upstream.wan_ip || node.parent_ip;
+			return _('Internet Gateway') + (wan ? ' (' + wan + ')' : '');
+		}
+		var parent = this.findNode(node.parent_id);
+		var hostname = (parent && parent.hostname) || node.parent_hostname || 'X-WRT';
+		var ip = node.parent_ip !== undefined ? node.parent_ip : (parent && parent.ip);
+		var name = hostname + (ip && ip !== hostname ? ' (' + ip + ')' : '');
+		return name + (parent && parent.online === false ? ' [' + _('Offline') + ']' : '');
+	},
+
+	findClient: function(mac) {
+		return ((this.data || {}).clients || []).find(function(client) { return client.mac === mac; });
+	},
+
+	matchesClient: function(client) {
+		var band = ({ '2g': '2.4G', '5g': '5G', '6g': '6G' })[this.filterBand];
+		if (band && (client.access_type !== 'wireless' || client.band !== band)) return false;
+		if ((this.filterBand === 'wired' || this.filterBand === 'vpn') && client.access_type !== this.filterBand) return false;
+		var query = this.searchQuery;
+		return !query || [client.hostname, client.mac, client.ip].concat(client.ips || [], client.ip6 || []).some(function(value) {
+			return value && value.toLowerCase().indexOf(query) !== -1;
+		});
 	},
 
 	renderClientCard: function(client, node) {
 		var self = this;
-		var q = self.searchQuery;
-		if (q && q !== '') {
-			var match = false;
-			if (client.hostname && client.hostname.toLowerCase().indexOf(q) !== -1) match = true;
-			if (client.mac && client.mac.toLowerCase().indexOf(q) !== -1) match = true;
-			if (client.ip && client.ip.indexOf(q) !== -1) match = true;
-			if (client.ips) {
-				for (var i = 0; i < client.ips.length; i++) {
-					if (client.ips[i].indexOf(q) !== -1) { match = true; break; }
-				}
-			}
-			if (client.ip6) {
-				for (var j = 0; j < client.ip6.length; j++) {
-					if (client.ip6[j].toLowerCase().indexOf(q) !== -1) { match = true; break; }
-				}
-			}
-			if (!match) return null;
-		}
-
-		if (self.filterBand === '5g' && (client.access_type !== 'wireless' || client.band !== '5G')) return null;
-		if (self.filterBand === '2g' && (client.access_type !== 'wireless' || client.band !== '2.4G')) return null;
-		if (self.filterBand === 'wired' && client.access_type !== 'wired') return null;
-		if (self.filterBand === 'vpn' && client.access_type !== 'vpn') return null;
-
 		var badgeClass = 'badge-wired';
 		var badgeText = client.port || _('LAN');
 		if (client.access_type === 'wireless') {
-			badgeClass = client.band === '5G' ? 'badge-5g' : 'badge-2g';
+			badgeClass = ({ '6G': 'badge-6g', '5G': 'badge-5g', '2.4G': 'badge-2g' })[client.band] || 'badge-secondary';
 			badgeText = client.band || 'Wi-Fi';
 		} else if (client.access_type === 'vpn') {
 			badgeClass = 'badge-vpn';
@@ -391,44 +494,46 @@ return view.extend({
 
 		var ipsList = (client.ips && client.ips.length > 0) ? client.ips : (client.ip ? [client.ip] : []);
 		var ipBadges = ipsList.map(function(ip) {
-			return E('span', { 'class': 'fm-ip-badge' }, ip);
+			return E('span', { 'class': 'fm-ip-badge' }, [ip]);
 		});
 
 		var ip6Badges = [];
 		if (client.ip6 && client.ip6.length > 0) {
 			client.ip6.forEach(function(ip6) {
-				ip6Badges.push(E('span', { 'class': 'fm-ip6-badge', 'title': ip6 }, ip6));
+				ip6Badges.push(E('span', { 'class': 'fm-ip6-badge', 'title': ip6 }, [ip6]));
 			});
 		}
 
 		var subMeta = [
-			E('span', { 'class': 'fm-client-mac' }, client.mac || '')
+			E('span', { 'class': 'fm-client-mac' }, [client.mac || ''])
 		];
 		if (client.access_type === 'wireless' && client.signal) {
-			subMeta.push(E('span', { 'class': 'fm-client-sig' }, client.signal + ' dBm'));
+			subMeta.push(E('span', { 'class': 'fm-client-sig' }, [client.signal + ' dBm']));
 		}
 		if (client.rx_speed > 0 || client.tx_speed > 0) {
 			subMeta.push(E('span', { 'class': 'fm-client-speed' }, [
-				E('span', { 'style': 'color:#28a745;' }, '↓ ' + formatSpeed(client.rx_speed)),
+				E('span', { 'style': 'color:#28a745;' }, ['↓ ' + formatSpeed(client.rx_speed)]),
 				' ',
-				E('span', { 'style': 'color:#007bff;' }, '↑ ' + formatSpeed(client.tx_speed))
+				E('span', { 'style': 'color:#007bff;' }, ['↑ ' + formatSpeed(client.tx_speed)])
 			]));
 		} else if (client.idle_time !== undefined && client.idle_time !== null) {
-			subMeta.push(E('span', { 'class': 'fm-client-idle text-muted', 'title': _('Last Active') }, formatLastActive(client.idle_time)));
+			subMeta.push(E('span', { 'class': 'fm-client-idle text-muted', 'title': _('Last Active') }, [formatLastActive(client.idle_time)]));
 		}
 
 		var card = E('div', {
 			'class': 'fm-client-card',
+			'data-fm-key': 'client:' + client.mac,
 			'click': function(ev) {
 				ev.stopPropagation();
-				self.showClientModal(client, node);
+				var latest = self.findClient(client.mac);
+				if (latest) self.showClientModal(latest, self.findNode(latest.node_id));
 			}
 		}, [
-			E('div', { 'class': 'fm-client-icon', 'innerHTML': getIconSvg(client.icon || 'device') }),
+			E('div', { 'class': 'fm-client-icon' }, getIconSvg(client.icon || 'device')),
 			E('div', { 'class': 'fm-client-info' }, [
 				E('div', { 'class': 'fm-client-top' }, [
-					E('div', { 'class': 'fm-client-name', 'title': client.hostname || client.mac }, client.hostname || client.mac),
-					E('span', { 'class': 'badge ' + badgeClass }, badgeText)
+					E('div', { 'class': 'fm-client-name', 'title': client.hostname || client.mac }, [client.hostname || client.mac]),
+					E('span', { 'class': 'badge ' + badgeClass }, [badgeText])
 				]),
 				ipBadges.length > 0 ? E('div', { 'class': 'fm-client-ip-row' }, ipBadges) : E([]),
 				ip6Badges.length > 0 ? E('div', { 'class': 'fm-client-ip6-row' }, [
@@ -444,6 +549,8 @@ return view.extend({
 
 	renderUplinkBadge: function(uplink) {
 		if (!uplink || uplink.type === 'root') return E([]);
+		if (uplink.type !== 'wired' && uplink.type !== 'wireless')
+			return E('div', { 'class': 'fm-uplink-badge' }, _('Unknown link'));
 
 		if (uplink.type === 'wireless') {
 			var sig = uplink.signal || 0;
@@ -452,9 +559,9 @@ return view.extend({
 			else if (sig < -62) sigClass = 'link-fair';
 
 			return E('div', { 'class': 'fm-uplink-badge ' + sigClass }, [
-				E('span', { 'class': 'fm-uplink-icon', 'innerHTML': getIconSvg('wifi') }),
+				E('span', { 'class': 'fm-uplink-icon' }, getIconSvg('wifi')),
 				E('span', {}, [
-					E('strong', {}, (uplink.band || '5G') + ' Mesh'),
+					E('strong', {}, [(uplink.band || '5G') + ' Mesh']),
 					sig ? (' · ' + sig + ' dBm') : '',
 					uplink.rx_bitrate ? (' · ' + uplink.rx_bitrate + ' Mbps') : ''
 				])
@@ -463,7 +570,7 @@ return view.extend({
 
 		// Wired uplink
 		return E('div', { 'class': 'fm-uplink-badge link-wired' }, [
-			E('span', { 'class': 'fm-uplink-icon', 'innerHTML': getIconSvg('ethernet') }),
+			E('span', { 'class': 'fm-uplink-icon' }, getIconSvg('ethernet')),
 			E('span', {}, [
 				E('strong', {}, _('Wired Ethernet')),
 				uplink.port ? (' · ' + uplink.port) : ' · LAN',
@@ -480,34 +587,34 @@ return view.extend({
 		var roleBadge = isController ? _('Controller (AC)') : (isWired ? _('Wired AP') : _('Agent Node'));
 
 		var header = E('div', { 'class': 'fm-node-header' }, [
-			E('div', { 'class': 'fm-node-icon ' + (isController ? 'icon-ac' : 'icon-agent'), 'innerHTML': getIconSvg(isController ? 'router' : (isWired ? 'router' : 'ap')) }),
+			E('div', { 'class': 'fm-node-icon ' + (isController ? 'icon-ac' : 'icon-agent') }, getIconSvg(isController ? 'router' : (isWired ? 'router' : 'ap'))),
 			E('div', { 'class': 'fm-node-titles' }, [
-				E('div', { 'class': 'fm-node-name', 'title': node.hostname }, node.hostname || node.ip),
+				E('div', { 'class': 'fm-node-name', 'title': node.hostname }, [node.hostname || node.ip]),
 				E('div', { 'class': 'fm-node-role' }, [
-					E('span', { 'class': 'badge ' + (isController ? 'badge-controller' : (isWired ? 'badge-wired' : 'badge-agent')) }, roleBadge),
-					(node.hop_count && node.hop_count > 0) ? E('span', { 'class': 'badge badge-hop' }, _('Hop %d').format(node.hop_count)) : E([]),
-					isLocal ? E('span', { 'class': 'badge badge-local' }, '📍 ' + _('This Device')) : E([]),
+					E('span', { 'class': 'badge ' + (isController ? 'badge-controller' : (isWired ? 'badge-wired' : 'badge-agent')) }, [roleBadge]),
+					(node.hop_count && node.hop_count > 0) ? E('span', { 'class': 'badge badge-hop' }, [_('Hop %d').format(node.hop_count)]) : E([]),
+					isLocal ? E('span', { 'class': 'badge badge-local' }, ['📍 ' + _('This Device')]) : E([]),
 					E('span', { 'class': 'fm-status-dot ' + (node.online ? 'online' : 'offline') })
 				])
 			])
 		]);
 
 		var upstreamLine = E('div', {}, [
-			E('span', { 'class': 'text-muted' }, _('Upstream') + ': '),
-			E('strong', {}, isRoot ? (node.parent_name || _('Internet Gateway')) : (node.parent_name || node.parent_hostname || 'X-WRT'))
+			E('span', { 'class': 'text-muted' }, [_('Upstream') + ': ']),
+			E('strong', {}, [self.formatUpstream(node)])
 		]);
 
 		var meta = E('div', { 'class': 'fm-node-meta' }, [
 			upstreamLine,
-			E('div', {}, [ E('span', { 'class': 'text-muted' }, _('IP') + ': '), E('strong', {}, node.ip || '-') ]),
-			E('div', {}, [ E('span', { 'class': 'text-muted' }, _('Model') + ': '), node.model || '-' ]),
-			node.uptime ? E('div', {}, [ E('span', { 'class': 'text-muted' }, _('Uptime') + ': '), formatUptime(node.uptime) ]) : E([])
+			E('div', {}, [ E('span', { 'class': 'text-muted' }, [_('IP') + ': ']), E('strong', {}, [node.ip || '-']) ]),
+			E('div', {}, [ E('span', { 'class': 'text-muted' }, [_('Model') + ': ']), node.model || '-' ]),
+			node.uptime ? E('div', {}, [ E('span', { 'class': 'text-muted' }, [_('Uptime') + ': ']), formatUptime(node.uptime) ]) : E([])
 		]);
 
 		var clientsContainer = E('div', { 'class': 'fm-clients-container' });
 		var clientCount = 0;
 
-		(nodeClients || []).forEach(function(c) {
+		(nodeClients || []).filter(function(c) { return self.matchesClient(c); }).forEach(function(c) {
 			var card = self.renderClientCard(c, node);
 			if (card) {
 				clientsContainer.appendChild(card);
@@ -516,19 +623,19 @@ return view.extend({
 		});
 
 		var footer = E('div', { 'class': 'fm-node-footer' }, [
-			E('span', { 'class': 'badge badge-secondary' }, clientCount + ' ' + _('Devices')),
+			E('span', { 'class': 'badge badge-secondary' }, [clientCount + ' ' + _('Devices')]),
 			(!isLocal && node.ip) ? E('a', {
 				'class': 'btn btn-xs btn-outline-primary',
 				'href': 'http://' + node.ip + '/',
 				'target': '_blank',
 				'click': function(ev) { ev.stopPropagation(); }
-			}, _('Manage') + ' ↗') : (isLocal ? E('span', { 'class': 'badge badge-local' }, '📍 ' + _('This Device')) : E([]))
+			}, [_('Manage') + ' ↗']) : (isLocal ? E('span', { 'class': 'badge badge-local' }, ['📍 ' + _('This Device')]) : E([]))
 		]);
 
 		return E('div', {
 			'class': 'fm-node-card ' + (isController ? 'controller-card' : 'agent-card') + (isLocal ? ' local-node' : ''),
 			'click': function() {
-				self.showNodeModal(node);
+				self.showNodeModal(self.findNode(node.id) || node);
 			}
 		}, [
 			header,
@@ -561,15 +668,15 @@ return view.extend({
 
 			childrenElem = E('div', { 'class': 'fm-cascade-container' }, [
 				E('div', { 'class': 'fm-cascade-header text-muted' }, [
-					E('span', { 'class': 'badge badge-info' }, (depth + 1) + ' ' + _('Hop Cascade Nodes')),
+					E('span', { 'class': 'badge badge-info' }, [(depth + 1) + ' ' + _('Hop Cascade Nodes')]),
 					' ',
-					E('small', {}, '(' + children.length + ' ' + _('Sub-nodes') + ')')
+					E('small', {}, ['(' + children.length + ' ' + _('Sub-nodes') + ')'])
 				]),
 				childrenGrid
 			]);
 		}
 
-		return E('div', { 'class': 'fm-node-branch depth-' + depth }, [
+		return E('div', { 'class': 'fm-node-branch depth-' + depth, 'data-fm-key': 'node:' + node.id }, [
 			uplinkElem,
 			nodeCard,
 			children.length > 0 ? E('div', { 'class': 'fm-connector-line' }) : E([]),
@@ -586,33 +693,33 @@ return view.extend({
 		var roleBadge = isController ? _('Controller (AC)') : (isWired ? _('Wired AP') : _('Agent Node'));
 
 		var header = E('div', { 'class': 'fm-mini-header' }, [
-			E('div', { 'class': 'fm-mini-icon ' + (isController ? 'icon-ac' : 'icon-agent'), 'innerHTML': getIconSvg(isController ? 'router' : (isWired ? 'router' : 'ap')) }),
+			E('div', { 'class': 'fm-mini-icon ' + (isController ? 'icon-ac' : 'icon-agent') }, getIconSvg(isController ? 'router' : (isWired ? 'router' : 'ap'))),
 			E('div', { 'class': 'fm-mini-titles' }, [
-				E('div', { 'class': 'fm-mini-name', 'title': node.hostname || node.ip }, node.hostname || node.ip),
+				E('div', { 'class': 'fm-mini-name', 'title': node.hostname || node.ip }, [node.hostname || node.ip]),
 				E('div', { 'class': 'fm-mini-ip-row' }, [
-					E('span', { 'class': 'fm-ip-badge' }, node.ip || '-'),
-					node.model ? E('span', { 'class': 'fm-mini-model', 'title': node.model }, node.model) : E([])
+					E('span', { 'class': 'fm-ip-badge' }, [node.ip || '-']),
+					node.model ? E('span', { 'class': 'fm-mini-model', 'title': node.model }, [node.model]) : E([])
 				])
 			])
 		]);
 
 		var subBadges = E('div', { 'class': 'fm-mini-sub-badge' }, [
-			E('span', { 'class': 'badge ' + (isController ? 'badge-controller' : (isWired ? 'badge-wired' : 'badge-agent')) }, roleBadge),
-			(node.hop_count && node.hop_count > 0) ? E('span', { 'class': 'badge badge-hop' }, _('Hop %d').format(node.hop_count)) : E([]),
-			isLocal ? E('span', { 'class': 'badge badge-local' }, '📍 ' + _('This Device')) : E([]),
+			E('span', { 'class': 'badge ' + (isController ? 'badge-controller' : (isWired ? 'badge-wired' : 'badge-agent')) }, [roleBadge]),
+			(node.hop_count && node.hop_count > 0) ? E('span', { 'class': 'badge badge-hop' }, [_('Hop %d').format(node.hop_count)]) : E([]),
+			isLocal ? E('span', { 'class': 'badge badge-local' }, ['📍 ' + _('This Device')]) : E([]),
 			isSelected ? E('span', { 'class': 'badge badge-selected' }, _('Currently Selected')) : E([]),
 			E('span', { 'class': 'fm-status-dot ' + (node.online ? 'online' : 'offline') })
 		]);
 
-		var upstreamText = isRoot ? (node.parent_name || _('Internet Gateway')) : (node.parent_name || node.parent_hostname || 'X-WRT');
+		var upstreamText = self.formatUpstream(node);
 		var upstreamLine = E('div', { 'class': 'fm-mini-upstream' }, [
-			E('span', { 'class': 'text-muted' }, _('Upstream') + ': '),
-			E('strong', { 'class': isRoot ? 'text-secondary' : 'text-primary' }, upstreamText)
+			E('span', { 'class': 'text-muted' }, [_('Upstream') + ': ']),
+			E('strong', { 'class': isRoot ? 'text-secondary' : 'text-primary' }, [upstreamText])
 		]);
 
 		var footer = E('div', { 'class': 'fm-mini-footer' }, [
-			E('span', { 'class': 'badge badge-info' }, (nodeClients ? nodeClients.length : 0) + ' ' + _('Devices')),
-			E('span', { 'class': 'fm-mini-click-hint' }, _('Click to Inspect') + ' 🔍')
+			E('span', { 'class': 'badge badge-info' }, [(nodeClients ? nodeClients.length : 0) + ' ' + _('Devices')]),
+			E('span', { 'class': 'fm-mini-click-hint' }, [_('Click to Inspect') + ' 🔍'])
 		]);
 
 		var chipClasses = ['fm-minimap-node'];
@@ -679,13 +786,13 @@ return view.extend({
 			}
 		}
 
-		return E('div', { 'class': 'fm-tree-node-wrapper depth-' + depth }, [
+		return E('div', { 'class': 'fm-tree-node-wrapper depth-' + depth, 'data-fm-key': 'node:' + node.id }, [
 			nodeChip,
 			childrenElem
 		]);
 	},
 
-	renderFocusedNodePanel: function(data, clientsByNode) {
+	resolveSelectedNode: function(data) {
 		var self = this;
 		var nodes = data.nodes || [];
 		var selectedNode = nodes.find(function(n) { return n.id === self.selectedNodeId; });
@@ -693,6 +800,12 @@ return view.extend({
 			selectedNode = nodes[0];
 			self.selectedNodeId = selectedNode.id;
 		}
+		return selectedNode;
+	},
+
+	renderFocusedNodePanel: function(data, clientsByNode) {
+		var self = this;
+		var selectedNode = self.resolveSelectedNode(data);
 		if (!selectedNode) return E([]);
 
 		var isController = (selectedNode.role === 'controller') || (!selectedNode.role && selectedNode.id === 'ac');
@@ -701,61 +814,37 @@ return view.extend({
 		var roleBadge = isController ? _('Controller (AC)') : (isWired ? _('Wired AP') : _('Agent Node'));
 		var allNodeClients = clientsByNode[selectedNode.id] || [];
 
-		var filteredClients = allNodeClients.filter(function(c) {
-			if (self.searchQuery && self.searchQuery !== '') {
-				var q = self.searchQuery;
-				var match = false;
-				if (c.hostname && c.hostname.toLowerCase().indexOf(q) !== -1) match = true;
-				if (c.mac && c.mac.toLowerCase().indexOf(q) !== -1) match = true;
-				if (c.ip && c.ip.indexOf(q) !== -1) match = true;
-				if (c.ips) {
-					for (var i = 0; i < c.ips.length; i++) {
-						if (c.ips[i].indexOf(q) !== -1) { match = true; break; }
-					}
-				}
-				if (c.ip6) {
-					for (var j = 0; j < c.ip6.length; j++) {
-						if (c.ip6[j].toLowerCase().indexOf(q) !== -1) { match = true; break; }
-					}
-				}
-				if (!match) return false;
-			}
-			if (self.filterBand === '5g' && (c.access_type !== 'wireless' || c.band !== '5G')) return false;
-			if (self.filterBand === '2g' && (c.access_type !== 'wireless' || c.band !== '2.4G')) return false;
-			if (self.filterBand === 'wired' && c.access_type !== 'wired') return false;
-			if (self.filterBand === 'vpn' && c.access_type !== 'vpn') return false;
-			return true;
-		});
+		var filteredClients = allNodeClients.filter(function(client) { return self.matchesClient(client); });
 
 		var titleBar = E('div', { 'class': 'fm-focused-title-bar' }, [
 			E('div', { 'class': 'fm-focused-title-left' }, [
 				E('h3', { 'style': 'margin:0;' }, [
 					_('Node Details & Connected Devices'),
 					' : ',
-					E('span', { 'class': 'text-primary' }, selectedNode.hostname || selectedNode.ip)
+					E('span', { 'class': 'text-primary' }, [selectedNode.hostname || selectedNode.ip])
 				]),
 				E('small', { 'class': 'text-muted' }, _('Click any node in minimap above to switch inspection'))
 			]),
 			E('div', { 'class': 'fm-focused-actions btn-group' }, [
 				E('button', {
 					'class': 'btn btn-sm btn-info',
-					'click': function() { self.showNodeModal(selectedNode); }
-				}, _('View Full Node Specs') + ' 🔍'),
+					'click': function() { self.showNodeModal(self.findNode(selectedNode.id) || selectedNode); }
+				}, [_('View Full Node Specs') + ' 🔍']),
 				isLocal ? E('span', {
 					'class': 'badge badge-local',
 					'style': 'align-self: center; font-size: 12px; padding: 6px 12px; margin-left: 6px;'
-				}, '📍 ' + _('Current Device (This Node)')) :
+				}, ['📍 ' + _('Current Device (This Node)')]) :
 				(selectedNode.ip ? E('a', {
 					'class': 'btn btn-sm btn-success',
 					'href': 'http://' + selectedNode.ip + '/',
 					'target': '_blank'
-				}, _('Open Web Admin') + ' ↗') : E([]))
+				}, [_('Open Web Admin') + ' ↗']) : E([]))
 			])
 		]);
 
 		var upstreamDisplay = E([]);
 		if (isController) {
-			upstreamDisplay = E('span', { 'class': 'badge badge-secondary' }, selectedNode.parent_name || _('Internet Gateway'));
+			upstreamDisplay = E('span', { 'class': 'badge badge-secondary' }, [self.formatUpstream(selectedNode)]);
 		} else {
 			upstreamDisplay = E('span', {
 				'class': 'badge badge-primary',
@@ -763,23 +852,24 @@ return view.extend({
 				'title': _('Click to inspect upstream node'),
 				'click': function(ev) {
 					ev.stopPropagation();
-					if (selectedNode.parent_id) {
-						self.selectedNodeId = selectedNode.parent_id;
+					var latest = self.findNode(selectedNode.id);
+					if (latest && latest.parent_id) {
+						self.selectedNodeId = latest.parent_id;
 						self.updateCanvas();
 					}
 				}
-			}, (selectedNode.parent_name || selectedNode.parent_hostname || 'X-WRT') + ' ↗');
+			}, [self.formatUpstream(selectedNode) + ' ↗']);
 		}
 
 		var heroGrid = E('div', { 'class': 'fm-focused-hero' }, [
 			E('div', { 'class': 'fm-hero-item' }, [
 				E('div', { 'class': 'fm-hero-label' }, _('Role & Status')),
 				E('div', { 'class': 'fm-hero-val' }, [
-					E('span', { 'class': 'badge ' + (isController ? 'badge-controller' : (isWired ? 'badge-wired' : 'badge-agent')) }, roleBadge),
+					E('span', { 'class': 'badge ' + (isController ? 'badge-controller' : (isWired ? 'badge-wired' : 'badge-agent')) }, [roleBadge]),
 					' ',
-					(selectedNode.hop_count && selectedNode.hop_count > 0) ? E('span', { 'class': 'badge badge-hop' }, _('Hop %d').format(selectedNode.hop_count)) : E([]),
+					(selectedNode.hop_count && selectedNode.hop_count > 0) ? E('span', { 'class': 'badge badge-hop' }, [_('Hop %d').format(selectedNode.hop_count)]) : E([]),
 					' ',
-					isLocal ? E('span', { 'class': 'badge badge-local' }, '📍 ' + _('This Device')) : E([]),
+					isLocal ? E('span', { 'class': 'badge badge-local' }, ['📍 ' + _('This Device')]) : E([]),
 					(isLocal ? ' ' : ''),
 					E('span', { 'class': 'fm-status-dot ' + (selectedNode.online ? 'online' : 'offline') })
 				])
@@ -794,23 +884,23 @@ return view.extend({
 			]),
 			E('div', { 'class': 'fm-hero-item' }, [
 				E('div', { 'class': 'fm-hero-label' }, _('IP Address')),
-				E('div', { 'class': 'fm-hero-val' }, selectedNode.ip || '-')
+				E('div', { 'class': 'fm-hero-val' }, [selectedNode.ip || '-'])
 			]),
 			E('div', { 'class': 'fm-hero-item' }, [
 				E('div', { 'class': 'fm-hero-label' }, _('MAC Address')),
-				E('div', { 'class': 'fm-hero-val' }, selectedNode.mac || '-')
+				E('div', { 'class': 'fm-hero-val' }, [selectedNode.mac || '-'])
 			]),
 			E('div', { 'class': 'fm-hero-item' }, [
 				E('div', { 'class': 'fm-hero-label' }, _('Hardware Model')),
-				E('div', { 'class': 'fm-hero-val' }, selectedNode.model || '-')
+				E('div', { 'class': 'fm-hero-val' }, [selectedNode.model || '-'])
 			]),
 			E('div', { 'class': 'fm-hero-item' }, [
 				E('div', { 'class': 'fm-hero-label' }, _('Uptime')),
-				E('div', { 'class': 'fm-hero-val' }, formatUptime(selectedNode.uptime))
+				E('div', { 'class': 'fm-hero-val' }, [formatUptime(selectedNode.uptime)])
 			]),
 			selectedNode.mesh_bssid ? E('div', { 'class': 'fm-hero-item' }, [
 				E('div', { 'class': 'fm-hero-label' }, _('Mesh BSSID')),
-				E('div', { 'class': 'fm-hero-val' }, selectedNode.mesh_bssid)
+				E('div', { 'class': 'fm-hero-val' }, [selectedNode.mesh_bssid])
 			]) : E([])
 		]);
 
@@ -818,7 +908,7 @@ return view.extend({
 			E('h4', { 'style': 'margin:0;' }, [
 				_('Connected Devices on this Node'),
 				' ',
-				E('span', { 'class': 'badge badge-info' }, filteredClients.length + ' / ' + allNodeClients.length)
+				E('span', { 'class': 'badge badge-info' }, [filteredClients.length + ' / ' + allNodeClients.length])
 			]),
 			E('small', { 'class': 'text-muted' }, _('Click any client to view deep details'))
 		]);
@@ -826,7 +916,7 @@ return view.extend({
 		var terminalsBody = E([]);
 		if (filteredClients.length === 0) {
 			var emptyMsg = (allNodeClients.length === 0) ? _('No terminal devices currently connected to this node.') : _('No matching devices');
-			terminalsBody = E('div', { 'class': 'alert-message info' }, emptyMsg);
+			terminalsBody = E('div', { 'class': 'alert-message info' }, [emptyMsg]);
 		} else {
 			var clientCards = [];
 			filteredClients.forEach(function(c) {
@@ -836,7 +926,7 @@ return view.extend({
 			terminalsBody = E('div', { 'class': 'fm-focused-clients-grid' }, clientCards);
 		}
 
-		return E('div', { 'class': 'fm-focused-panel' }, [
+		return E('div', { 'class': 'fm-focused-panel', 'data-fm-key': 'focused:' + selectedNode.id }, [
 			titleBar,
 			heroGrid,
 			terminalsHdr,
@@ -877,13 +967,19 @@ return view.extend({
 	},
 
 	updateCanvas: function() {
-		var summaryEl = document.getElementById('fm-topology-summary');
-		if (summaryEl && this.data) {
-			dom.content(summaryEl, this.renderSummaryBar(this.data.summary, this.data.mesh_id));
-		}
 		var canvas = document.getElementById('fm-topology-canvas');
 		if (!canvas || !this.data) return;
-		dom.content(canvas, this.renderTree(this.data));
+		if (this.viewMode !== 'expanded') this.resolveSelectedNode(this.data);
+		var signature = JSON.stringify([this.data.mesh_id, this.data.current_node_id, this.data.summary, this.data.nodes, this.data.clients,
+			this.filterBand, this.searchQuery, this.viewMode, this.selectedNodeId], function(key, value) {
+			return key === 'children' ? undefined : value;
+		});
+		if (canvas === this.canvasElement && signature === this.canvasSignature) return;
+		var summaryEl = document.getElementById('fm-topology-summary');
+		if (summaryEl) syncChildren(summaryEl, E('div', {}, [this.renderSummaryBar(this.data.summary, this.data.mesh_id)]));
+		syncChildren(canvas, E('div', {}, [this.renderTree(this.data)]));
+		this.canvasElement = canvas;
+		this.canvasSignature = signature;
 	},
 
 	renderTree: function(data) {
@@ -903,14 +999,10 @@ return view.extend({
 			return E('div', { 'class': 'alert-message warning' }, _('No FakeMesh nodes detected. Please verify FakeMesh configuration.'));
 		}
 
-		var upInfo = root.upstream || root.backhaul || {};
-		var wanLabel = _('Internet Gateway');
-		if (upInfo.wan_ip && upInfo.wan_ip !== '') {
-			wanLabel += ' (' + upInfo.wan_ip + ')';
-		}
+		var wanLabel = self.formatUpstream(root);
 		var wanBox = E('div', { 'class': 'fm-wan-box' }, [
-			E('div', { 'class': 'fm-wan-icon', 'innerHTML': getIconSvg('cloud') }),
-			E('div', { 'class': 'fm-wan-title' }, wanLabel)
+			E('div', { 'class': 'fm-wan-icon' }, getIconSvg('cloud')),
+			E('div', { 'class': 'fm-wan-title' }, [wanLabel])
 		]);
 
 		var wanLink = E('div', { 'class': 'fm-tree-link-v' });
@@ -931,6 +1023,7 @@ return view.extend({
 			_('Click any node to zoom in and inspect connected terminals')
 		]);
 
+		var focusedPanel = self.renderFocusedNodePanel(data, clientsByNode);
 		var minimapBranch = self.renderMinimapBranch(root, 0, clientsByNode);
 
 		var minimapContainer = E('div', { 'class': 'fm-minimap-container' }, [
@@ -939,8 +1032,6 @@ return view.extend({
 			wanLink,
 			minimapBranch
 		]);
-
-		var focusedPanel = self.renderFocusedNodePanel(data, clientsByNode);
 
 		return E('div', { 'class': 'fm-topology-minimap-view' }, [
 			minimapContainer,
@@ -1323,6 +1414,7 @@ return view.extend({
 				font-size: 10px;
 				color: #64748b;
 			}
+			.badge-6g { background: #dcfce7; color: #166534; font-weight: 600; font-size: 11px; }
 			.badge-5g { background: #e0f2fe; color: #0369a1; font-weight: 600; font-size: 11px; }
 			.badge-2g { background: #fef3c7; color: #b45309; font-weight: 600; font-size: 11px; }
 			.badge-wired { background: #e5e7eb; color: #374151; font-weight: 600; font-size: 11px; }
@@ -1648,8 +1740,16 @@ return view.extend({
 		var self = this;
 		poll.add(function() {
 			return callGetTopology().then(function(topo) {
-				self.data = topo || {};
+				if (!topo || !Array.isArray(topo.nodes) || !topo.nodes.length || !Array.isArray(topo.clients)) throw new Error('Invalid topology response');
+				self.data = topo;
+				self.lastSuccessfulRefresh = Date.now();
+				self.refreshFailed = false;
 				self.updateCanvas();
+				self.refreshDetailModal();
+				self.updateRefreshStatus();
+			}).catch(function() {
+				self.refreshFailed = true;
+				self.updateRefreshStatus();
 			});
 		}, 5);
 	},
@@ -1657,6 +1757,8 @@ return view.extend({
 	render: function(topoData) {
 		this.injectStyles();
 		this.data = topoData || {};
+		this.lastSuccessfulRefresh = topoData && Array.isArray(topoData.nodes) && topoData.nodes.length ? Date.now() : null;
+		this.refreshFailed = !this.lastSuccessfulRefresh;
 		if (this.data.current_node_id) {
 			this.selectedNodeId = this.data.current_node_id;
 		}
@@ -1675,6 +1777,7 @@ return view.extend({
 			E('div', { 'class': 'cbi-map-descr' }, _('Visual hierarchy of FakeMesh controller, agent nodes, and connected terminal devices.')),
 			summaryBar,
 			toolbar,
+			this.renderRefreshStatus(),
 			canvas
 		]);
 	},
